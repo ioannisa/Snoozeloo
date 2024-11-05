@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -12,6 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppOutlinedActionButton
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -44,10 +49,24 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+    Column(
+        modifier = Modifier
+            .padding(UIConst.padding),
+        verticalArrangement = Arrangement.spacedBy(UIConst.paddingSmall)
+    ) {
+        Text(
+            text = "Hello $name!",
+            modifier = modifier
+        )
+
+        AppActionButton(
+            text = "TEST 1"
+        ) { }
+
+        AppOutlinedActionButton(
+            text = "TEST 2"
+        ) { }
+    }
 }
 
 @Preview(showBackground = true)
