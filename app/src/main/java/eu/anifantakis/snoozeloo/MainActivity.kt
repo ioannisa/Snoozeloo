@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +20,7 @@ import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppOutlinedActionButton
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppSwitch
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppWeeklyChips
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -74,10 +77,22 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
             }
         )
+
+        AppSwitch(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessHigh
+            )
+        )
+
+        AppSwitch(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessHigh
+            )
+        )
     }
 }
-
-
 
 @Preview(showBackground = true)
 @Composable
