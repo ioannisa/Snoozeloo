@@ -19,8 +19,11 @@ android {
     }
 
     buildTypes {
-        release {
+        debug {
             isMinifyEnabled = false
+        }
+        release {
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -36,6 +39,9 @@ android {
     }
     buildFeatures {
         compose = true
+
+        // enable buildConfig to separate between debug and release versions
+        buildConfig = true
     }
 }
 
@@ -50,7 +56,25 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+    // Parameterize you Material Theme and import google fonts
+    // https://m3.material.io/theme-builder
+
+    // Google Fonts - after finishing above step you need to add this implementation
+    // https://developer.android.com/develop/ui/compose/text/fonts#use-downloadable-fonts
     implementation(libs.androidx.ui.text.google.fonts)
+
+    // Additional Icons
+    implementation(libs.androidx.material.icons.extended)
+
+    // SplashScreen
+    implementation(libs.androidx.core.splashscreen)
+
+    // Koin
+    implementation(libs.bundles.koin)
+    implementation(libs.bundles.koin.compose)
+
+    // Timber for logging
+    implementation(libs.timber)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
