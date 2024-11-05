@@ -18,7 +18,7 @@ import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppOutlinedActionButton
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.chips.AppWeeklyChips
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppWeeklyChips
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
