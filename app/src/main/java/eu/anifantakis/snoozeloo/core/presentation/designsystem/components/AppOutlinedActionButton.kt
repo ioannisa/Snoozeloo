@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -41,7 +39,7 @@ fun AppOutlinedActionButton(
 
         ),
         border = BorderStroke(
-            width = 4.dp,
+            width = 1.dp,
             color = if(enabled) MaterialTheme.colorScheme.primary else UIConst.grayOutColor(
                 MaterialTheme.colorScheme.primary)
         ),
@@ -49,7 +47,7 @@ fun AppOutlinedActionButton(
 
         modifier = modifier
         .clip(RoundedCornerShape(30.dp))
-        .background(UIConst.colorWithAlpha(MaterialTheme.colorScheme.primary, alpha = 0.1f)),
+        .background(UIConst.colorWithAlpha(MaterialTheme.colorScheme.primary)),
 
     ) {
         Box(

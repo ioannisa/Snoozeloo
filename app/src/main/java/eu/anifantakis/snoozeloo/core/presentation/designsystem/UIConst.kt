@@ -15,7 +15,7 @@ object UIConst {
         return lerp(color, Color.Gray, blendFactor)
     }
 
-    fun colorWithAlpha(color: Color, alpha: Float = 0.5f): Color {
+    fun colorWithAlpha(color: Color, alpha: Float = 0.1f): Color {
         return color.copy(alpha = alpha)
     }
 }

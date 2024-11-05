@@ -16,7 +16,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppOutlinedActionButton
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.chips.AppWeeklyChips
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -66,13 +68,23 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         AppOutlinedActionButton(
             text = "TEST 2"
         ) { }
+
+        AppWeeklyChips(
+            onSelectionChanged = { selectedDays ->
+
+            }
+        )
     }
 }
+
+
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     SnoozelooTheme {
-        Greeting("Android")
+        AppBackground {
+            Greeting("Android")
+        }
     }
 }
