@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.screens.Meridiem
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 
 @Composable
