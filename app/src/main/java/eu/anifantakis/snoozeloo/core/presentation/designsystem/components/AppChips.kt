@@ -42,7 +42,7 @@ private fun DayFilterChip(
         label = {
             Text(
                 text = day.label,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodySmall
             )
         },
         modifier = modifier.defaultMinSize(
