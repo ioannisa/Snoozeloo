@@ -1,6 +1,7 @@
 package eu.anifantakis.snoozeloo.core.presentation.designsystem
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -34,4 +35,8 @@ object Icons {
     val close: ImageVector
         @Composable
         get() = Icons.Outlined.Close
+
+    val back: ImageVector
+        @Composable
+        get() = Icons.AutoMirrored.Outlined.ArrowBack
 }
