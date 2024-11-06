@@ -2,6 +2,9 @@ package eu.anifantakis.snoozeloo.core.presentation.designsystem
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
@@ -20,4 +23,15 @@ object Icons {
         @Composable
         get() = Icons.Outlined.Add
 
+    val bellOn: ImageVector
+        @Composable
+        get() = Icons.Outlined.NotificationsActive
+
+    val bellOff: ImageVector
+        @Composable
+        get() = Icons.Outlined.NotificationsOff
+
+    val close: ImageVector
+        @Composable
+        get() = Icons.Outlined.Close
 }
