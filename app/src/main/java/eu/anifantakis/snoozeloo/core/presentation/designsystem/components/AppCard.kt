@@ -34,8 +34,7 @@ fun AppCard(
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.onPrimary)
             .fillMaxWidth()
-
-            .padding(8.dp)
+            .padding(16.dp)
 
     ) {
         content()
@@ -107,6 +106,22 @@ private fun AppCardPreview() {
                         )
 
                         AppText14("Bright Morning")
+                    }
+                }
+
+                AppCard() {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AppText16("Wake Up")
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            AppText42("10:00")
+                            AppText24("AM", modifier = Modifier.padding(bottom = 4.dp))
+                        }
+                        AppText14("Alarm in 30min", color = MaterialTheme.colorScheme.outline)
                     }
                 }
             }

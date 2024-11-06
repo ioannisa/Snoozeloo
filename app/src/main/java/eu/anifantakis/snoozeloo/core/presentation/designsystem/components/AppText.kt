@@ -88,7 +88,7 @@ fun AppText24(
         modifier = modifier,
         text = text,
         style = textStyle.copy(
-            fontSize = 42.sp,
+            fontSize = 24.sp,
             lineHeight = 29.26.sp,
             color = color
         ),
