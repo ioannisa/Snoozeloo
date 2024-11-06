@@ -97,7 +97,6 @@ private fun DayFilterChipGroup(
 
 @Composable
 fun AppWeeklyChips(
-
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onSelectionChanged: (Map<String, Boolean>) -> Unit,

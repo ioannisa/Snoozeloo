@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Snoozeloo</string>
+    <string name="get_eight_hours_of_sleep">Go to bed at %1$s %2$s to get 8h of sleep</string>
 </resources>

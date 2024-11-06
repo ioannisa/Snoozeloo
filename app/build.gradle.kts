@@ -75,6 +75,7 @@ dependencies {
 
     // Timber for logging
     implementation(libs.timber)
+    implementation(libs.androidx.navigation.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
