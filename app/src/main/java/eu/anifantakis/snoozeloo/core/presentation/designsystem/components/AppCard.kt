@@ -18,10 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
@@ -37,11 +35,9 @@ fun AppCard(
             .background(MaterialTheme.colorScheme.onPrimary)
             .fillMaxWidth()
             .padding(16.dp)
-
     ) {
         content()
     }
-
 }
 
 @Preview(uiMode = UI_MODE_NIGHT_NO)
@@ -55,8 +51,6 @@ private fun AppCardPreview() {
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(UIConst.paddingSmall)
             ) {
-
-
                 AppCard() {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -90,61 +84,6 @@ private fun AppCardPreview() {
                         )
 
                         AppText14("Default (Bright Morning)")
-                    }
-                }
-
-                AppCard() {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(UIConst.paddingSmall)
-                    ) {
-                        Icon(
-                            imageVector = Icons.bellOn,
-                            contentDescription = "Logo",
-                            //tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier
-                                .width(24.dp)
-                                .height(24.dp)
-                        )
-
-                        AppText14("Bright Morning")
-                    }
-                }
-
-                AppCard() {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            AppText16("Wake Up")
-                            AppSwitch()
-                        }
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.Bottom
-                        ) {
-                            AppText42("10:00")
-                            AppText24("AM", modifier = Modifier.padding(bottom = 4.dp))
-                        }
-                        AppText14("Alarm in 30min", color = MaterialTheme.colorScheme.outline)
-                        AppWeeklyChips(
-                            modifier = Modifier.fillMaxWidth(),
-                            onSelectionChanged = {
-
-                            }
-                        )
-                        AppText14(
-                            text = String.format(
-                                stringResource(id = R.string.get_eight_hours_of_sleep),
-                                "20:00",
-                                Meridiem.AM
-                            ),
-                            color = MaterialTheme.colorScheme.outline
-                        )
                     }
                 }
             }

@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
@@ -26,35 +25,31 @@ fun AppScreenWithFAB(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    SnoozelooTheme {
-        AppBackground {
-            Box(
-                modifier = modifier.fillMaxSize()
-            ) {
-                // Main content
-                content()
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        // Main content
+        content()
 
-                // Centered FAB
-                FloatingActionButton(
-                    onClick = onFabClick,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = UIConst.paddingDouble),
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(
-                        imageVector = Icons.add,
-                        contentDescription = "Add",
-                        modifier = Modifier
-                            .width(UIConst.paddingDouble)
-                            .height(UIConst.paddingDouble)
-                    )
-                }
-            }
+        // Centered FAB
+        FloatingActionButton(
+            onClick = onFabClick,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = UIConst.paddingDouble),
+            shape = CircleShape,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        ) {
+            Icon(
+                imageVector = Icons.add,
+                contentDescription = "Add",
+                modifier = Modifier
+                    .width(UIConst.paddingDouble)
+                    .height(UIConst.paddingDouble)
+            )
         }
-        }
+    }
 }
 
 @Preview(uiMode = UI_MODE_NIGHT_NO)

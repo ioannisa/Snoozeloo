@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
+import java.util.UUID
 
 enum class Meridiem {
     AM,
@@ -28,6 +29,7 @@ enum class Meridiem {
 }
 
 data class AlarmState(
+    val id: UUID = UUID.randomUUID(),
     val time: String,
     val meridiem: Meridiem,
     val isEnabled: Boolean,
