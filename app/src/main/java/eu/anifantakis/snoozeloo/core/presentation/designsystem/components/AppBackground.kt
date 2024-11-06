@@ -38,7 +38,7 @@ fun AppBackground(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
     ) {
         Column(
             modifier = Modifier
