@@ -1,5 +1,7 @@
 package eu.anifantakis.snoozeloo.core.presentation.designsystem.components
 
+import android.content.res.Configuration.UI_MODE_NIGHT_NO
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
@@ -8,7 +10,9 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -24,16 +28,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
+import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 
 @Composable
 fun AppSwitch(
     initialState: Boolean = false,
     width: Int = 60,
     height: Int = 30,
-    checkedThumbColor: Color = Color.White,
-    uncheckedThumbColor: Color = Color.White,
+    checkedThumbColor: Color = MaterialTheme.colorScheme.onPrimary,
+    uncheckedThumbColor: Color = MaterialTheme.colorScheme.onPrimary,
     checkedTrackColor: Color = MaterialTheme.colorScheme.primary,
     uncheckedTrackColor: Color = UIConst.colorWithAlpha(MaterialTheme.colorScheme.primary, alpha = 0.3f),
     animationSpec: AnimationSpec<Float> = spring(
@@ -63,8 +69,6 @@ fun AppSwitch(
         label = "thumb_color_animation"
     )
 
-
-
     Box(
         modifier = Modifier
             .width(width.dp)
@@ -90,5 +94,36 @@ fun AppSwitch(
                 .padding(2.dp)
         )
     }
+}
 
+
+@Preview(uiMode = UI_MODE_NIGHT_NO)
+@Preview(uiMode = UI_MODE_NIGHT_YES)
+@Composable
+private fun AppSwitchPreview() {
+    SnoozelooTheme {
+        AppBackground {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(UIConst.paddingSmall)
+            ) {
+                AppSwitch(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessHigh
+                    )
+                ) {
+
+                }
+
+                AppSwitch(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessHigh
+                    )
+                )
+            }
+        }
+    }
 }
