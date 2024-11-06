@@ -15,6 +15,7 @@ sealed class AlarmUiEvent {
     data object OnAddAlarm : AlarmUiEvent()
     data class OnAlarmEnabled(val alarm: AlarmState, val enabled: Boolean) : AlarmUiEvent()
     data class OnAlarmDaysChanged(val alarm: AlarmState, val selectedDays: Map<String, Boolean>) : AlarmUiEvent()
+    data class OnAlarmDeleted(val alarm: AlarmState) : AlarmUiEvent()
 }
 
 class AlarmViewModel: ViewModel() {
@@ -65,6 +66,11 @@ class AlarmViewModel: ViewModel() {
                             alarm
                         }
                     }
+                )
+            }
+            is AlarmUiEvent.OnAlarmDeleted -> {
+                state = state.copy(
+                    alarms = state.alarms.filterNot { it.id == event.alarm.id }
                 )
             }
         }

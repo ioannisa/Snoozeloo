@@ -2,6 +2,7 @@ package eu.anifantakis.snoozeloo.core.presentation.designsystem
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -23,6 +24,10 @@ object Icons {
     val add: ImageVector
         @Composable
         get() = Icons.Outlined.Add
+
+    val delete: ImageVector
+        @Composable
+        get() = Icons.Default.Delete
 
     val bellOn: ImageVector
         @Composable
