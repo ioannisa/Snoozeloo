@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.com.google.devtools.ksp)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
 }
@@ -44,10 +45,6 @@ android {
         // enable buildConfig to separate between debug and release versions
         buildConfig = true
     }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "2.0.0"
-    }
 }
 
 dependencies {
@@ -59,8 +56,6 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-
-    implementation(libs.androidx.foundation)
 
     // Parameterize you Material Theme and import google fonts
     // https://m3.material.io/theme-builder
@@ -87,6 +82,12 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+
+    // Room
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
