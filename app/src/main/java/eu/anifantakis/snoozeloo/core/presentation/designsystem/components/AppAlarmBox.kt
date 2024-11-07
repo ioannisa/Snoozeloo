@@ -76,7 +76,6 @@ fun AppAlarmBox(
             // Weekly chips
             AppWeeklyChips(
                 modifier = Modifier.fillMaxWidth(),
-                enabled = initialState.isEnabled,
                 selectedDays = initialState.selectedDays,  // Pass the current state
                 onSelectionChanged = { selectedDays ->
                     onAlarmEvent(AlarmUiEvent.OnAlarmDaysChanged(initialState, selectedDays))

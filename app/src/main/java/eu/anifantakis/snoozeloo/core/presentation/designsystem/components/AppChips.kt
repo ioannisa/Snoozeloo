@@ -99,20 +99,19 @@ private fun DayFilterChipGroup(
 @Composable
 fun AppWeeklyChips(
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
     selectedDays: DaysOfWeek,  // Changed from initialSelection: Map<String, Boolean>
     onSelectionChanged: (DaysOfWeek) -> Unit,
 ) {
     // Define the days
     val days = remember {
         listOf(
-            DayChip("mo", "Mo", enabled),
-            DayChip("tu", "Tu", enabled),
-            DayChip("we", "We", enabled),
-            DayChip("th", "Th", enabled),
-            DayChip("fr", "Fr", enabled),
-            DayChip("sa", "Sa", enabled),
-            DayChip("su", "Su", enabled)
+            DayChip("mo", "Mo"),
+            DayChip("tu", "Tu"),
+            DayChip("we", "We"),
+            DayChip("th", "Th"),
+            DayChip("fr", "Fr"),
+            DayChip("sa", "Sa"),
+            DayChip("su", "Su")
         )
     }
 
