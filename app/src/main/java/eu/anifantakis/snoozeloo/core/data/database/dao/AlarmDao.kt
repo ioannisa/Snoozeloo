@@ -17,7 +17,7 @@ interface AlarmDao {
     @Upsert
     suspend fun upsertAlarms(alarms: List<AlarmEntity>)
 
-    @Query("SELECT * FROM AlarmEntity ORDER BY id ASC")
+    @Query("SELECT * FROM AlarmEntity")
     fun getAlarms(): Flow<List<AlarmEntity>>
 
     @Query("DELETE FROM AlarmEntity WHERE id = :id")

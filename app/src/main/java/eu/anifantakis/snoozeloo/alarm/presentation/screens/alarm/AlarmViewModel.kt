@@ -1,6 +1,7 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm
 
 import android.util.Log
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
+@Immutable
 data class AlarmsState(
     val alarms: List<Alarm> = emptyList(),
     val selectedAlarm: Alarm? = null,
@@ -49,7 +51,6 @@ class AlarmViewModel(
             }
             .launchIn(viewModelScope)
     }
-
 
     private fun loadAlarms() {
         viewModelScope.launch {
