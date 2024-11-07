@@ -24,7 +24,7 @@ package eu.anifantakis.snoozeloo.alarm.domain
 //)
 
 
-typealias DaysOfWeek = Map<String, Boolean>
+//typealias DaysOfWeek = Map<String, Boolean>
 
 enum class Meridiem {
     AM,
@@ -39,16 +39,14 @@ data class Alarm(
     val selectedDays: DaysOfWeek,
     val timeUntilAlarm: String,
     val suggestedSleepTime: String
-
 )
 
-//data class DaysOfWeek(
-//    val mo: Boolean = false,
-//    val tu: Boolean = false,
-//    val we: Boolean = false,
-//    val th: Boolean = false,
-//    val fr: Boolean = false,
-//    val sa: Boolean = false,
-//    val su: Boolean = false
-//)
-//
+data class DaysOfWeek(
+    val mo: Boolean = false,
+    val tu: Boolean = false,
+    val we: Boolean = false,
+    val th: Boolean = false,
+    val fr: Boolean = false,
+    val sa: Boolean = false,
+    val su: Boolean = false
+)

@@ -26,7 +26,6 @@ import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AlarmEvent
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppAlarmBox
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppScreenWithFAB
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText16
@@ -118,19 +117,7 @@ private fun AlarmListScreen(
                 SwipeableAlarmItem(
                     alarmState = alarm,
                     onDelete = { onEvent(AlarmUiEvent.OnAlarmDeleted(alarm)) },
-                    onAlarmEvent = { event ->
-                        when (event) {
-                            is AlarmEvent.OnEnabledChanged -> {
-                                onEvent(AlarmUiEvent.OnAlarmEnabled(alarm, event.enabled))
-                            }
-                            is AlarmEvent.OnDaysChanged -> {
-                                onEvent(AlarmUiEvent.OnAlarmDaysChanged(alarm, event.selectedDays))
-                            }
-                            is AlarmEvent.OnOpenAlarmEditor -> {
-                                onEvent(AlarmUiEvent.OnOpenAlarmEditor(event.alarmId))
-                            }
-                        }
-                    },
+                    onAlarmEvent = onEvent,
                     modifier = Modifier.padding(vertical = UIConst.paddingSmall)
                 )
             }
@@ -143,7 +130,7 @@ private fun AlarmListScreen(
 private fun SwipeableAlarmItem(
     alarmState: Alarm,
     onDelete: () -> Unit,
-    onAlarmEvent: (AlarmEvent) -> Unit,
+    onAlarmEvent: (AlarmUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState(

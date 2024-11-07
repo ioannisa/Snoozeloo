@@ -2,6 +2,7 @@ package eu.anifantakis.snoozeloo.alarm.data
 
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.AlarmsRepository
+import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.alarm.domain.Meridiem
 import eu.anifantakis.snoozeloo.alarm.domain.datasource.AlarmId
 import eu.anifantakis.snoozeloo.alarm.domain.datasource.LocalAlarmsDataSource
@@ -37,14 +38,14 @@ class AlarmsRepositoryImpl(
             time = "00:00",
             meridiem = Meridiem.AM,
             isEnabled = true,
-            selectedDays = mapOf(
-                "mo" to false,
-                "tu" to false,
-                "we" to false,
-                "th" to false,
-                "fr" to false,
-                "sa" to false,
-                "su" to false
+            selectedDays = DaysOfWeek(
+                mo = false,
+                tu = false,
+                we = false,
+                th = false,
+                fr = false,
+                sa = false,
+                su = false
             ),
             timeUntilAlarm = "",
             suggestedSleepTime = ""

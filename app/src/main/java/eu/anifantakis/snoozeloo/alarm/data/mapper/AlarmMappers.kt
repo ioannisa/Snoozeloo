@@ -1,6 +1,7 @@
 package eu.anifantakis.snoozeloo.alarm.data.mapper
 
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
+import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.alarm.domain.Meridiem
 import eu.anifantakis.snoozeloo.core.data.database.entity.AlarmEntity
 
@@ -20,15 +21,14 @@ fun AlarmEntity.toAlarm(): Alarm {
     val (twelveHour, meridiem) = get12HourFormatAndMeridiem(hour)
     val timeString = String.format("%d:%02d", twelveHour, minute)
 
-    // Create days of week map
-    val daysMap = mapOf(
-        "mo" to mo,
-        "tu" to tu,
-        "we" to we,
-        "th" to th,
-        "fr" to fr,
-        "sa" to sa,
-        "su" to su
+    val daysOfWeek = DaysOfWeek(
+        mo = mo,
+        tu = tu,
+        we = we,
+        th = th,
+        fr = fr,
+        sa = sa,
+        su = su
     )
 
     // Calculate time until alarm and suggested sleep time
@@ -40,7 +40,7 @@ fun AlarmEntity.toAlarm(): Alarm {
         time = timeString,
         meridiem = meridiem,
         isEnabled = enabled,
-        selectedDays = daysMap,
+        selectedDays = daysOfWeek,
         timeUntilAlarm = timeUntilAlarm,
         suggestedSleepTime = suggestedSleepTime
     )
@@ -73,13 +73,13 @@ fun Alarm.toEntity(): AlarmEntity {
         minute = minute,
         enabled = isEnabled,
         // Extract individual day values from the map, defaulting to false if not found
-        mo = selectedDays["mo"] ?: false,
-        tu = selectedDays["tu"] ?: false,
-        we = selectedDays["we"] ?: false,
-        th = selectedDays["th"] ?: false,
-        fr = selectedDays["fr"] ?: false,
-        sa = selectedDays["sa"] ?: false,
-        su = selectedDays["su"] ?: false,
+        mo = selectedDays.mo,
+        tu = selectedDays.tu,
+        we = selectedDays.we,
+        th = selectedDays.th,
+        fr = selectedDays.fr,
+        sa = selectedDays.sa,
+        su = selectedDays.su,
         // Assuming these fields exist in AlarmEntity - adjust as needed
         title = "",  // You might want to derive this from somewhere
         ringtone = "", // Default value

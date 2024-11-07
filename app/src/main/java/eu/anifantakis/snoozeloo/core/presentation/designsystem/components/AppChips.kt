@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 
 private data class DayChip(
@@ -99,8 +100,8 @@ private fun DayFilterChipGroup(
 fun AppWeeklyChips(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    initialSelection: Map<String, Boolean> = emptyMap(), // Add this parameter
-    onSelectionChanged: (Map<String, Boolean>) -> Unit,
+    selectedDays: DaysOfWeek,  // Changed from initialSelection: Map<String, Boolean>
+    onSelectionChanged: (DaysOfWeek) -> Unit,
 ) {
     // Define the days
     val days = remember {
@@ -115,24 +116,36 @@ fun AppWeeklyChips(
         )
     }
 
-    // Initialize selectedDays with the values from initialSelection
-    var selectedDays by remember(initialSelection) {
-        mutableStateOf(initialSelection.entries
-            .filter { it.value }
-            .map { it.key }
-            .toSet())
+    // Initialize selectedDays based on DaysOfWeek
+    var selectedDaySet by remember(selectedDays) {
+        mutableStateOf(buildSet {
+            if (selectedDays.mo) add("mo")
+            if (selectedDays.tu) add("tu")
+            if (selectedDays.we) add("we")
+            if (selectedDays.th) add("th")
+            if (selectedDays.fr) add("fr")
+            if (selectedDays.sa) add("sa")
+            if (selectedDays.su) add("su")
+        })
     }
 
     DayFilterChipGroup(
         days = days,
-        selectedDays = selectedDays,
+        selectedDays = selectedDaySet,
         onSelectionChanged = { newSelection ->
-            selectedDays = newSelection
-            // Convert to map of day codes to boolean selection state
-            val daysMap = days.associate {
-                it.code to newSelection.contains(it.code)
-            }
-            onSelectionChanged(daysMap)
+            selectedDaySet = newSelection
+
+            val daysOfWeek = DaysOfWeek(
+                mo = newSelection.contains("mo"),
+                tu = newSelection.contains("tu"),
+                we = newSelection.contains("we"),
+                th = newSelection.contains("th"),
+                fr = newSelection.contains("fr"),
+                sa = newSelection.contains("sa"),
+                su = newSelection.contains("su")
+            )
+
+            onSelectionChanged(daysOfWeek)
         },
         modifier = modifier
     )
@@ -142,7 +155,19 @@ fun AppWeeklyChips(
 @Preview(uiMode = UI_MODE_NIGHT_YES)
 @Composable
 private fun WeeklyChipsPreview() {
-    var selectedDays by remember { mutableStateOf(emptyMap<String, Boolean>()) }
+    var selectedDays by remember {
+        mutableStateOf(
+            DaysOfWeek(
+                mo = false,
+                tu = false,
+                we = false,
+                th = false,
+                fr = false,
+                sa = false,
+                su = false
+            )
+        )
+    }
 
     SnoozelooTheme {
         AppBackground {
@@ -151,18 +176,30 @@ private fun WeeklyChipsPreview() {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 AppWeeklyChips(
-                    onSelectionChanged = {
-                        selectedDays = it
+                    selectedDays = selectedDays,
+                    onSelectionChanged = { newDays ->
+                        selectedDays = newDays
                     }
                 )
 
                 // Show what's selected
                 Text(
-                    text = selectedDays.entries
-                        .filter { it.value }
-                        .map { it.key.uppercase() }
-                        .joinToString(", ")
-                        .ifEmpty { "No days selected" },
+                    text = buildString {
+                        val selectedList = mutableListOf<String>()
+                        if (selectedDays.mo) selectedList.add("MO")
+                        if (selectedDays.tu) selectedList.add("TU")
+                        if (selectedDays.we) selectedList.add("WE")
+                        if (selectedDays.th) selectedList.add("TH")
+                        if (selectedDays.fr) selectedList.add("FR")
+                        if (selectedDays.sa) selectedList.add("SA")
+                        if (selectedDays.su) selectedList.add("SU")
+
+                        append(if (selectedList.isEmpty()) {
+                            "No days selected"
+                        } else {
+                            selectedList.joinToString(", ")
+                        })
+                    },
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

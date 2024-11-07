@@ -1,5 +1,6 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -8,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.AlarmsRepository
+import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
@@ -23,8 +25,7 @@ data class AlarmsState(
 sealed interface AlarmUiEvent {
     data object OnAddAlarm : AlarmUiEvent
     data class OnAlarmEnabled(val alarm: Alarm, val enabled: Boolean) : AlarmUiEvent
-    data class OnAlarmDaysChanged(val alarm: Alarm, val selectedDays: Map<String, Boolean>) :
-        AlarmUiEvent
+    data class OnAlarmDaysChanged(val alarm: Alarm, val selectedDays: DaysOfWeek) : AlarmUiEvent
     data class OnAlarmDeleted(val alarm: Alarm) : AlarmUiEvent
     data class OnOpenAlarmEditor(val alarmId: String): AlarmUiEvent
 }
@@ -50,10 +51,13 @@ class AlarmViewModel(
     }
 
 
-    fun loadAlarms() {
+    private fun loadAlarms() {
         viewModelScope.launch {
             repository.getAlarms()
                 .collect{
+
+                    Log.d("ALARMS_IS", "${it}")
+
                     state = state.copy(alarms = it)
                 }
         }

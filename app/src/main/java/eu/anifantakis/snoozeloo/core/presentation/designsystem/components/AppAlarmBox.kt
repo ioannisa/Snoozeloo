@@ -23,19 +23,14 @@ import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.alarm.domain.Meridiem
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmUiEvent
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
-
-sealed interface AlarmEvent {
-    data class OnEnabledChanged(val enabled: Boolean) : AlarmEvent
-    data class OnDaysChanged(val selectedDays: DaysOfWeek) : AlarmEvent
-    data class OnOpenAlarmEditor(val alarmId: String): AlarmEvent
-}
 
 @Composable
 fun AppAlarmBox(
     initialState: Alarm,
-    onAlarmEvent: (AlarmEvent) -> Unit,
+    onAlarmEvent: (AlarmUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     AppCard(modifier = modifier) {
@@ -52,7 +47,7 @@ fun AppAlarmBox(
                 AppSwitch(
                     initialState = initialState.isEnabled,
                     onCheckedChange = { enabled ->
-                        onAlarmEvent(AlarmEvent.OnEnabledChanged(enabled))
+                        onAlarmEvent(AlarmUiEvent.OnAlarmEnabled(initialState, enabled))
                     }
                 )
             }
@@ -61,8 +56,8 @@ fun AppAlarmBox(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(UIConst.paddingExtraSmall),
                 verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.clickable{
-                    onAlarmEvent(AlarmEvent.OnOpenAlarmEditor(initialState.id))
+                modifier = Modifier.clickable {
+                    onAlarmEvent(AlarmUiEvent.OnOpenAlarmEditor(initialState.id))
                 }
             ) {
                 AppText42(initialState.time)
@@ -82,8 +77,9 @@ fun AppAlarmBox(
             AppWeeklyChips(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = initialState.isEnabled,
+                selectedDays = initialState.selectedDays,  // Pass the current state
                 onSelectionChanged = { selectedDays ->
-                    onAlarmEvent(AlarmEvent.OnDaysChanged(selectedDays))
+                    onAlarmEvent(AlarmUiEvent.OnAlarmDaysChanged(initialState, selectedDays))
                 }
             )
 
@@ -100,7 +96,6 @@ fun AppAlarmBox(
     }
 }
 
-// Preview
 @Preview(uiMode = UI_MODE_NIGHT_NO)
 @Preview(uiMode = UI_MODE_NIGHT_YES)
 @Composable
@@ -112,14 +107,14 @@ private fun AppAlarmBoxPreview() {
                 time = "10:00",
                 meridiem = Meridiem.AM,
                 isEnabled = true,
-                selectedDays = mapOf(
-                    "mo" to false,
-                    "tu" to false,
-                    "we" to false,
-                    "th" to false,
-                    "fr" to false,
-                    "sa" to false,
-                    "su" to false
+                selectedDays = DaysOfWeek(
+                    mo = false,
+                    tu = false,
+                    we = false,
+                    th = false,
+                    fr = false,
+                    sa = false,
+                    su = false
                 ),
                 timeUntilAlarm = "Alarm in 30min",
                 suggestedSleepTime = "10:00"
@@ -133,14 +128,15 @@ private fun AppAlarmBoxPreview() {
                 initialState = previewState,
                 onAlarmEvent = { event ->
                     when (event) {
-                        is AlarmEvent.OnEnabledChanged -> {
+                        is AlarmUiEvent.OnAlarmEnabled -> {
                             previewState = previewState.copy(isEnabled = event.enabled)
                         }
-                        is AlarmEvent.OnDaysChanged -> {
+                        is AlarmUiEvent.OnAlarmDaysChanged -> {
                             previewState = previewState.copy(selectedDays = event.selectedDays)
                         }
-
-                        is AlarmEvent.OnOpenAlarmEditor -> {}
+                        is AlarmUiEvent.OnOpenAlarmEditor -> {}
+                        is AlarmUiEvent.OnAddAlarm -> {}
+                        is AlarmUiEvent.OnAlarmDeleted -> {}
                     }
                 },
                 modifier = Modifier.padding(UIConst.padding)
