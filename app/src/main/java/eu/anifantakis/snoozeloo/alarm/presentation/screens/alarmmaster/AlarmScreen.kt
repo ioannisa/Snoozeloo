@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.core.presentation.designsystem.screens
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmmaster
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,12 +26,20 @@ import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppAla
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppScreenWithFAB
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText16
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText24
+import eu.anifantakis.snoozeloo.core.presentation.ui.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AlarmScreenRoot(
+    onClockClick: () -> Unit,
     viewModel: AlarmViewModel = koinViewModel()
 ) {
+    ObserveAsEvents(viewModel.events) { event ->
+        if (event == AlarmUiEvent.OnClockTapped) {
+            onClockClick()
+        }
+    }
+
     AlarmScreen(
         state = viewModel.state,
         onEvent = viewModel::onEvent
@@ -106,6 +114,10 @@ private fun AlarmListScreen(
                                         event.selectedDays
                                     )
                                 )
+                            }
+
+                            AlarmEvent.OnClockTapped -> {
+                                onEvent(AlarmUiEvent.OnClockTapped)
                             }
                         }
                     },

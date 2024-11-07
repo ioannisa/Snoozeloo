@@ -2,6 +2,7 @@ package eu.anifantakis.snoozeloo.core.presentation.designsystem.components
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,9 +39,10 @@ data class AlarmState(
     val suggestedSleepTime: String
 )
 
-sealed class AlarmEvent {
-    data class OnEnabledChanged(val enabled: Boolean) : AlarmEvent()
-    data class OnDaysChanged(val selectedDays: Map<String, Boolean>) : AlarmEvent()
+sealed interface AlarmEvent {
+    data class OnEnabledChanged(val enabled: Boolean) : AlarmEvent
+    data class OnDaysChanged(val selectedDays: Map<String, Boolean>) : AlarmEvent
+    data object OnClockTapped: AlarmEvent
 }
 
 @Composable
@@ -71,7 +73,10 @@ fun AppAlarmBox(
             // Time display
             Row(
                 horizontalArrangement = Arrangement.spacedBy(UIConst.paddingExtraSmall),
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.clickable{
+                    onAlarmEvent(AlarmEvent.OnClockTapped)
+                }
             ) {
                 AppText42(initialState.time)
                 AppText24(
@@ -146,6 +151,8 @@ private fun AppAlarmBoxPreview() {
                         is AlarmEvent.OnDaysChanged -> {
                             previewState = previewState.copy(selectedDays = event.selectedDays)
                         }
+
+                        AlarmEvent.OnClockTapped -> {}
                     }
                 },
                 modifier = Modifier.padding(UIConst.padding)

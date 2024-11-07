@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.alarm.presentation.ringtonesetting
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.ringtonesetting
 
 import androidx.compose.runtime.Composable
 

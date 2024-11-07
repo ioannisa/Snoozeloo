@@ -13,11 +13,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.screens.AlarmScreenRoot
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmmaster.AlarmScreenRoot
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.clockscreen.ClockScreen
 import kotlinx.serialization.Serializable
 
 sealed interface NavGraph {
     @Serializable data object AlarmScreen: NavGraph
+    @Serializable data object ClockScreen: NavGraph
 }
 
 @Composable
@@ -44,7 +46,14 @@ fun NavigationRoot(
                     )
             ) {
                 composable<NavGraph.AlarmScreen> {
-                    AlarmScreenRoot()
+                    AlarmScreenRoot(onClockClick = {
+                        println("HERE WE ARE!!")
+                        navController.navigate(NavGraph.ClockScreen)
+                    })
+                }
+
+                composable<NavGraph.ClockScreen> {
+                    ClockScreen()
                 }
             }
         }
