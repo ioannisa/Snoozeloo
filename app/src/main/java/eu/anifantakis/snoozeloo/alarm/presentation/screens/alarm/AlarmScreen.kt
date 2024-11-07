@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmmaster
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,10 +23,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.R
+import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AlarmEvent
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AlarmState
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppAlarmBox
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppScreenWithFAB
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText16
@@ -36,12 +36,20 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AlarmScreenRoot(
-    onClockClick: () -> Unit,
+    onOpenAlarmEditor: (alarmId: String) -> Unit,
     viewModel: AlarmViewModel = koinViewModel()
 ) {
     ObserveAsEvents(viewModel.events) { event ->
-        if (event == AlarmUiEvent.OnClockTapped) {
-            onClockClick()
+
+        when (event) {
+            is AlarmUiEvent.OnOpenAlarmEditor -> {
+                println("DETAIL: ${event.alarmId}")
+                if (event.alarmId.trim() != "") {
+                    onOpenAlarmEditor(event.alarmId)
+
+                }
+            }
+            else -> { }
         }
     }
 
@@ -70,7 +78,7 @@ private fun AlarmScreen(
 
 @Composable
 private fun AlarmListScreen(
-    alarms: List<AlarmState>,
+    alarms: List<Alarm>,
     onEvent: (AlarmUiEvent) -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = UIConst.padding)) {
@@ -106,20 +114,20 @@ private fun AlarmListScreen(
             items(
                 items = alarms,
                 key = { item -> item.id }
-            ) { alarmState ->
+            ) { alarm ->
                 SwipeableAlarmItem(
-                    alarmState = alarmState,
-                    onDelete = { onEvent(AlarmUiEvent.OnAlarmDeleted(alarmState)) },
+                    alarmState = alarm,
+                    onDelete = { onEvent(AlarmUiEvent.OnAlarmDeleted(alarm)) },
                     onAlarmEvent = { event ->
                         when (event) {
                             is AlarmEvent.OnEnabledChanged -> {
-                                onEvent(AlarmUiEvent.OnAlarmEnabled(alarmState, event.enabled))
+                                onEvent(AlarmUiEvent.OnAlarmEnabled(alarm, event.enabled))
                             }
                             is AlarmEvent.OnDaysChanged -> {
-                                onEvent(AlarmUiEvent.OnAlarmDaysChanged(alarmState, event.selectedDays))
+                                onEvent(AlarmUiEvent.OnAlarmDaysChanged(alarm, event.selectedDays))
                             }
-                            AlarmEvent.OnClockTapped -> {
-                                onEvent(AlarmUiEvent.OnClockTapped)
+                            is AlarmEvent.OnOpenAlarmEditor -> {
+                                onEvent(AlarmUiEvent.OnOpenAlarmEditor(event.alarmId))
                             }
                         }
                     },
@@ -133,7 +141,7 @@ private fun AlarmListScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeableAlarmItem(
-    alarmState: AlarmState,
+    alarmState: Alarm,
     onDelete: () -> Unit,
     onAlarmEvent: (AlarmEvent) -> Unit,
     modifier: Modifier = Modifier

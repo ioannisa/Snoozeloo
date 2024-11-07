@@ -12,14 +12,15 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmmaster.AlarmScreenRoot
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.clockscreen.ClockScreen
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmScreenRoot
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.clock.ClockScreen
 import kotlinx.serialization.Serializable
 
 sealed interface NavGraph {
-    @Serializable data object AlarmScreen: NavGraph
-    @Serializable data object ClockScreen: NavGraph
+    @Serializable data object Alarms: NavGraph
+    @Serializable data class AlarmEditor(val alarmId: String): NavGraph
 }
 
 @Composable
@@ -33,7 +34,7 @@ fun NavigationRoot(
         AppBackground {
             NavHost(
                 navController = navController,
-                startDestination = NavGraph.AlarmScreen,
+                startDestination = NavGraph.Alarms,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(
@@ -45,15 +46,20 @@ fun NavigationRoot(
                         )
                     )
             ) {
-                composable<NavGraph.AlarmScreen> {
-                    AlarmScreenRoot(onClockClick = {
+                composable<NavGraph.Alarms> {
+                    AlarmScreenRoot(onOpenAlarmEditor = { alarmId ->
                         println("HERE WE ARE!!")
-                        navController.navigate(NavGraph.ClockScreen)
+                        navController.navigate(NavGraph.AlarmEditor(alarmId))
                     })
                 }
 
-                composable<NavGraph.ClockScreen> {
-                    ClockScreen()
+                composable<NavGraph.AlarmEditor> {
+                    val args = it.toRoute<NavGraph.AlarmEditor>()
+                    val alarmId = args.alarmId
+
+                    ClockScreen(
+                        alarmId = alarmId
+                    )
                 }
             }
         }

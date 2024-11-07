@@ -1,7 +1,7 @@
 package eu.anifantakis.snoozeloo.di
 
 import eu.anifantakis.snoozeloo.MainViewModel
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmmaster.AlarmViewModel
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmViewModel
 import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.dsl.module
 

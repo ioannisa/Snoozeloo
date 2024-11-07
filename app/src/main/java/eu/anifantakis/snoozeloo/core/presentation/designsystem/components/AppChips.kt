@@ -99,6 +99,7 @@ private fun DayFilterChipGroup(
 fun AppWeeklyChips(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    initialSelection: Map<String, Boolean> = emptyMap(), // Add this parameter
     onSelectionChanged: (Map<String, Boolean>) -> Unit,
 ) {
     // Define the days
@@ -114,8 +115,13 @@ fun AppWeeklyChips(
         )
     }
 
-    // Maintain selection state
-    var selectedDays by remember { mutableStateOf(emptySet<String>()) }
+    // Initialize selectedDays with the values from initialSelection
+    var selectedDays by remember(initialSelection) {
+        mutableStateOf(initialSelection.entries
+            .filter { it.value }
+            .map { it.key }
+            .toSet())
+    }
 
     DayFilterChipGroup(
         days = days,

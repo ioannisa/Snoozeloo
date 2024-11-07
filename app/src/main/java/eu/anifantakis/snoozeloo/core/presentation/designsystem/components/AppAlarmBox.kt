@@ -20,34 +20,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.R
+import eu.anifantakis.snoozeloo.alarm.domain.Alarm
+import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
+import eu.anifantakis.snoozeloo.alarm.domain.Meridiem
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
-import java.util.UUID
-
-enum class Meridiem {
-    AM,
-    PM
-}
-
-data class AlarmState(
-    val id: UUID = UUID.randomUUID(),
-    val time: String,
-    val meridiem: Meridiem,
-    val isEnabled: Boolean,
-    val selectedDays: Map<String, Boolean>,
-    val timeUntilAlarm: String,
-    val suggestedSleepTime: String
-)
 
 sealed interface AlarmEvent {
     data class OnEnabledChanged(val enabled: Boolean) : AlarmEvent
-    data class OnDaysChanged(val selectedDays: Map<String, Boolean>) : AlarmEvent
-    data object OnClockTapped: AlarmEvent
+    data class OnDaysChanged(val selectedDays: DaysOfWeek) : AlarmEvent
+    data class OnOpenAlarmEditor(val alarmId: String): AlarmEvent
 }
 
 @Composable
 fun AppAlarmBox(
-    initialState: AlarmState,
+    initialState: Alarm,
     onAlarmEvent: (AlarmEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -75,7 +62,7 @@ fun AppAlarmBox(
                 horizontalArrangement = Arrangement.spacedBy(UIConst.paddingExtraSmall),
                 verticalAlignment = Alignment.Bottom,
                 modifier = Modifier.clickable{
-                    onAlarmEvent(AlarmEvent.OnClockTapped)
+                    onAlarmEvent(AlarmEvent.OnOpenAlarmEditor(initialState.id))
                 }
             ) {
                 AppText42(initialState.time)
@@ -120,7 +107,8 @@ fun AppAlarmBox(
 private fun AppAlarmBoxPreview() {
     var previewState by remember {
         mutableStateOf(
-            AlarmState(
+            Alarm(
+                id = "",
                 time = "10:00",
                 meridiem = Meridiem.AM,
                 isEnabled = true,
@@ -152,7 +140,7 @@ private fun AppAlarmBoxPreview() {
                             previewState = previewState.copy(selectedDays = event.selectedDays)
                         }
 
-                        AlarmEvent.OnClockTapped -> {}
+                        is AlarmEvent.OnOpenAlarmEditor -> {}
                     }
                 },
                 modifier = Modifier.padding(UIConst.padding)

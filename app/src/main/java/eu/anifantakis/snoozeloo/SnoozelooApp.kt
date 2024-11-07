@@ -2,6 +2,7 @@ package eu.anifantakis.snoozeloo
 
 import android.app.Application
 import eu.anifantakis.snoozeloo.di.appModule
+import eu.anifantakis.snoozeloo.di.dataModule
 import eu.anifantakis.snoozeloo.di.dbModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -22,7 +23,8 @@ class SnoozelooApp: Application() {
             androidContext(this@SnoozelooApp)
             modules(
                 appModule,
-                dbModule
+                dbModule,
+                dataModule
             )
         }
     }
