@@ -47,4 +47,8 @@ object Icons {
     val back: ImageVector
         @Composable
         get() = Icons.AutoMirrored.Outlined.ArrowBack
+
+    val checked: ImageVector
+        @Composable
+        get() = ImageVector.vectorResource(id = R.drawable.ic_checked)
 }
