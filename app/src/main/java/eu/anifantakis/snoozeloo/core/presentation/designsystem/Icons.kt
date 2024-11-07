@@ -19,6 +19,9 @@ object Icons {
         @Composable
         get() = ImageVector.vectorResource(id = R.drawable.alarm)
 
+    val colon: ImageVector
+        @Composable
+        get() = ImageVector.vectorResource(id = R.drawable.colon)
 
     // icon via material icons library
     val add: ImageVector
