@@ -44,18 +44,23 @@ android {
         // enable buildConfig to separate between debug and release versions
         buildConfig = true
     }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "2.0.0"
+    }
 }
 
 dependencies {
-
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    implementation(libs.androidx.foundation)
 
     // Parameterize you Material Theme and import google fonts
     // https://m3.material.io/theme-builder
@@ -65,6 +70,7 @@ dependencies {
     implementation(libs.androidx.ui.text.google.fonts)
 
     // Additional Icons
+    implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material.icons.extended)
 
     // SplashScreen

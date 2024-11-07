@@ -9,9 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -69,7 +74,10 @@ private fun AlarmListScreen(
     onEvent: (AlarmUiEvent) -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = UIConst.padding)) {
-        AppText24(stringResource(R.string.your_alarms), modifier = Modifier.padding(vertical = UIConst.padding))
+        AppText24(
+            stringResource(R.string.your_alarms),
+            modifier = Modifier.padding(vertical = UIConst.padding)
+        )
 
         if (alarms.isEmpty()) {
             Box(
@@ -80,7 +88,7 @@ private fun AlarmListScreen(
                     modifier = Modifier.padding(48.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(UIConst.padding)
-                ){
+                ) {
                     Icon(
                         imageVector = Icons.alarm,
                         contentDescription = "Logo",
@@ -94,28 +102,22 @@ private fun AlarmListScreen(
             }
         }
 
-        LazyColumn{
+        LazyColumn {
             items(
                 items = alarms,
                 key = { item -> item.id }
             ) { alarmState ->
-                AppAlarmBox(
-                    initialState = alarmState,
+                SwipeableAlarmItem(
+                    alarmState = alarmState,
+                    onDelete = { onEvent(AlarmUiEvent.OnAlarmDeleted(alarmState)) },
                     onAlarmEvent = { event ->
                         when (event) {
                             is AlarmEvent.OnEnabledChanged -> {
                                 onEvent(AlarmUiEvent.OnAlarmEnabled(alarmState, event.enabled))
                             }
-
                             is AlarmEvent.OnDaysChanged -> {
-                                onEvent(
-                                    AlarmUiEvent.OnAlarmDaysChanged(
-                                        alarmState,
-                                        event.selectedDays
-                                    )
-                                )
+                                onEvent(AlarmUiEvent.OnAlarmDaysChanged(alarmState, event.selectedDays))
                             }
-
                             AlarmEvent.OnClockTapped -> {
                                 onEvent(AlarmUiEvent.OnClockTapped)
                             }
@@ -127,6 +129,56 @@ private fun AlarmListScreen(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeableAlarmItem(
+    alarmState: AlarmState,
+    onDelete: () -> Unit,
+    onAlarmEvent: (AlarmEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { totalDistance -> totalDistance * 0.5f }
+    )
+
+    LaunchedEffect(dismissState.currentValue) {
+        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+            onDelete()
+        }
+    }
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    imageVector = Icons.delete,
+                    contentDescription = "Delete Alarm",
+                    tint = UIConst.colorWithAlpha(MaterialTheme.colorScheme.onSurface, 0.4f),
+                    modifier = Modifier
+                        .width(72.dp)
+                        .height(72.dp)
+                )
+            }
+        },
+        content = {
+            AppAlarmBox(
+                initialState = alarmState,
+                onAlarmEvent = onAlarmEvent,
+                modifier = modifier
+            )
+        },
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true
+    )
+}
+
 
 @Preview
 @Composable
