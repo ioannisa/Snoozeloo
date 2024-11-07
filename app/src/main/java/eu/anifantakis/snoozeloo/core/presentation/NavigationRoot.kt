@@ -15,7 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmScreenRoot
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.clock.ClockScreen
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmedit.AlarmEditScreen
 import kotlinx.serialization.Serializable
 
 sealed interface NavGraph {
@@ -57,7 +57,7 @@ fun NavigationRoot(
                     val args = it.toRoute<NavGraph.AlarmEditor>()
                     val alarmId = args.alarmId
 
-                    ClockScreen(
+                    AlarmEditScreen(
                         alarmId = alarmId
                     )
                 }

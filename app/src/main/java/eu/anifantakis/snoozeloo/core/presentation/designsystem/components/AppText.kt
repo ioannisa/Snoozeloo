@@ -124,6 +124,7 @@ fun AppText52(
         style = textStyle.copy(
             fontSize = 52.sp,
             lineHeight = 63.39.sp,
+            fontWeight = FontWeight.W700,
             color = color
         ),
     )

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,30 +23,33 @@ import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 
 @Composable
-fun AppClock() {
+fun AppClock(
+    hour: String,
+    minute: String,
+) {
     Box {
         AppCard {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(16.dp)
             ) {
                 ClockRectangle(
-                    text = "16",
+                    text = hour,
                     modifier = Modifier.weight(1f)
                 )
-
 
                 Icon(
                     imageVector = Icons.colon,
                     contentDescription = "",
                     modifier = Modifier
-                        .padding(UIConst.paddingSmall)
-                        .height(UIConst.paddingDouble)
-
+                        .padding(UIConst.paddingExtraSmall)
+                        .height(16.dp)
+                        .width(16.dp)
                 )
 
                 ClockRectangle(
-                    text = "45",
+                    text = minute,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -56,11 +60,11 @@ fun AppClock() {
 @Composable
 private fun ClockRectangle(
     text: String,
-    modifier: Modifier = Modifier  // Add modifier parameter
+    modifier: Modifier = Modifier
 ) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier  // Use the passed modifier
+        modifier = modifier
             .height(95.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
@@ -81,7 +85,7 @@ private fun AppClockPreview() {
                     .padding(16.dp)
             ) {
 
-                AppClock()
+                AppClock("12", "35")
             }
         }
     }
