@@ -46,7 +46,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 class NumberPickerState {
-    var selectedNumber by mutableIntStateOf(0)
+    private var selectedNumber by mutableIntStateOf(0)
     var isScrollInProgress by mutableStateOf(false)
     private var onFinalValueCallback: ((Int) -> Unit)? = null
 
