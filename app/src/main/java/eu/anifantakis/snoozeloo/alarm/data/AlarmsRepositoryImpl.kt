@@ -22,6 +22,10 @@ class AlarmsRepositoryImpl(
         return localDataSource.getAlarms()
     }
 
+    override suspend fun getAlarm(id: AlarmId): Alarm {
+        return localDataSource.getAlarm(id = id)
+    }
+
     override suspend fun upsertAlarm(alarm: Alarm): EmptyDataResult<DataError> {
         val localResult = localDataSource.upsertAlarm(alarm)
 
@@ -35,7 +39,8 @@ class AlarmsRepositoryImpl(
     override suspend fun createNewAlarm(): EmptyDataResult<DataError> {
         val emptyAlarm = Alarm(
             id = UUID.randomUUID().toString(),
-            time = "00:00",
+            hour = 0,
+            minute = 0,
             meridiem = Meridiem.AM,
             isEnabled = true,
             selectedDays = DaysOfWeek(

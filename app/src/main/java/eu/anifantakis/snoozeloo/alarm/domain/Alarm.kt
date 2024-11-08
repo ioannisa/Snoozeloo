@@ -33,7 +33,8 @@ enum class Meridiem {
 
 data class Alarm(
     val id: String,
-    val time: String,
+    val hour: Int,
+    val minute: Int,
     val meridiem: Meridiem,
     val isEnabled: Boolean,
     val selectedDays: DaysOfWeek,

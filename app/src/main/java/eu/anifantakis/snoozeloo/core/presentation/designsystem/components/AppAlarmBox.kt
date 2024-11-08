@@ -24,6 +24,7 @@ import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.alarm.domain.Meridiem
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmUiEvent
+import eu.anifantakis.snoozeloo.core.domain.util.timeAsString
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 
@@ -60,7 +61,7 @@ fun AppAlarmBox(
                     onAlarmEvent(AlarmUiEvent.OnOpenAlarmEditor(initialState.id))
                 }
             ) {
-                AppText42(initialState.time)
+                AppText42(initialState.timeAsString())
                 AppText24(
                     initialState.meridiem.name,
                     modifier = Modifier.padding(bottom = 4.dp)
@@ -103,7 +104,8 @@ private fun AppAlarmBoxPreview() {
         mutableStateOf(
             Alarm(
                 id = "",
-                time = "10:00",
+                hour = 10,
+                minute = 5,
                 meridiem = Meridiem.AM,
                 isEnabled = true,
                 selectedDays = DaysOfWeek(

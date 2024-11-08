@@ -22,6 +22,11 @@ class LocalAlarmsDataSourceImpl(
             }
     }
 
+    override suspend fun getAlarm(id: AlarmId): Alarm {
+        return alarmDao.getAlarm(id = id)
+            .toAlarm()
+    }
+
     override suspend fun upsertAlarm(alarm: Alarm): DataResult<AlarmId, DataError.Local> {
         return try {
             val entity = alarm.toEntity()

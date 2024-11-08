@@ -10,6 +10,7 @@ typealias AlarmId = String
 interface LocalAlarmsDataSource {
 
     fun getAlarms(): Flow<List<Alarm>>
+    suspend fun getAlarm(id: AlarmId): Alarm
     suspend fun upsertAlarm(alarm: Alarm): DataResult<AlarmId, DataError.Local>
     suspend fun upsertAlarms(alarms: List<Alarm>): DataResult<List<AlarmId>, DataError.Local>
     suspend fun deleteAlarm(id: AlarmId)

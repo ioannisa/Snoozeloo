@@ -37,7 +37,8 @@ fun AlarmEntity.toAlarm(): Alarm {
 
     return Alarm(
         id = id,
-        time = timeString,
+        hour = hour,
+        minute = minute,
         meridiem = meridiem,
         isEnabled = enabled,
         selectedDays = daysOfWeek,
@@ -63,9 +64,6 @@ fun Alarm.toEntity(): AlarmEntity {
 
         return Pair(hour, minute)
     }
-
-    // Convert time string and meridiem back to 24-hour format
-    val (hour, minute) = get24HourFormat(time, meridiem)
 
     return AlarmEntity(
         id = id,
