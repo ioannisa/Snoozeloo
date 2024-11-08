@@ -22,8 +22,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmmaster.AlarmUiEvent
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmmaster.AlarmViewModel
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmUiEvent
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmViewModel
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppCard
