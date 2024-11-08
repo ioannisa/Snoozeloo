@@ -2,7 +2,6 @@ package eu.anifantakis.snoozeloo.core.presentation.designsystem.components
 
 import androidx.compose.animation.core.EaseOutCirc
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -75,7 +74,6 @@ class MultiplierFlingBehavior(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppNumberPicker(
     range: IntRange = 0..100,
@@ -116,11 +114,11 @@ fun AppNumberPicker(
     val itemHeightPixels = remember { mutableIntStateOf(0) }
 
     // Perform initial scroll animation
-    LaunchedEffect(itemHeightPixels.value) {
-        if (!hasPlayedInitialAnimation && itemHeightPixels.value > 0) {
+    LaunchedEffect(itemHeightPixels.intValue) {
+        if (!hasPlayedInitialAnimation && itemHeightPixels.intValue > 0) {
             coroutineScope.launch {
-                var scrollDistance = itemHeightPixels.value * startOffset.toFloat()
-                scrollDistance -= (itemHeightPixels.value / 5f)
+                var scrollDistance = itemHeightPixels.intValue * startOffset.toFloat()
+                scrollDistance -= (itemHeightPixels.intValue / 5f)
 
                 listState.animateScrollBy(
                     value = scrollDistance,
@@ -163,13 +161,13 @@ fun AppNumberPicker(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(with(density) { itemHeightPixels.value.toDp() } * visibleItemsCount)
+                .height(with(density) { itemHeightPixels.intValue.toDp() } * visibleItemsCount)
         ) {
             items(listScrollCount) { index ->
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .onSizeChanged { size -> itemHeightPixels.value = size.height }
+                        .onSizeChanged { size -> itemHeightPixels.intValue = size.height }
                         .fillMaxWidth()
                 ) {
                     val visibleItems = listState.layoutInfo.visibleItemsInfo
