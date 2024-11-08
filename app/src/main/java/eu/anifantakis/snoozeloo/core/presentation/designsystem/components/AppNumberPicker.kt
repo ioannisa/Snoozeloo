@@ -19,6 +19,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -113,6 +114,15 @@ fun AppNumberPicker(
 
     val itemHeightPixels = remember { mutableIntStateOf(0) }
 
+    // Create derived state for layout calculations
+    val layoutInfo = remember {
+        derivedStateOf {
+            val items = listState.layoutInfo.visibleItemsInfo
+            val viewportCenter = listState.layoutInfo.viewportEndOffset / 2f
+            Pair(items, viewportCenter)
+        }
+    }
+
     // Perform initial scroll animation
     LaunchedEffect(itemHeightPixels.intValue) {
         if (!hasPlayedInitialAnimation && itemHeightPixels.intValue > 0) {
@@ -170,10 +180,9 @@ fun AppNumberPicker(
                         .onSizeChanged { size -> itemHeightPixels.intValue = size.height }
                         .fillMaxWidth()
                 ) {
-                    val visibleItems = listState.layoutInfo.visibleItemsInfo
+                    val (visibleItems, center) = layoutInfo.value
                     val itemInfo = visibleItems.find { it.index == index }
                     val itemOffset = itemInfo?.offset ?: 0
-                    val center = listState.layoutInfo.viewportEndOffset / 2f
                     val distanceFromCenter = itemOffset - center + (itemInfo?.size ?: 0) / 2f
 
                     val angleInRadians = (distanceFromCenter / wheelRadius)
