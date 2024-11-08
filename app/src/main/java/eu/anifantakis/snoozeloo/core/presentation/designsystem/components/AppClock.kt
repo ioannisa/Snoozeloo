@@ -13,6 +13,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,9 +28,13 @@ import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 
 @Composable
 fun AppClock(
-    hour: String,
-    minute: String,
+    initialHour: Int,
+    initialMinute: Int,
+    onTimeSelected: (hour: Int, minute: Int) -> Unit
 ) {
+    var selectedHour by remember { mutableIntStateOf(initialHour) }
+    var selectedMinute by remember { mutableIntStateOf(initialMinute) }
+
     Box {
         AppCard {
             Row(
@@ -35,8 +43,14 @@ fun AppClock(
                 modifier = Modifier.padding(16.dp)
             ) {
                 ClockRectangle(
-                    text = hour,
-                    modifier = Modifier.weight(1f)
+                    range = 0..23,
+                    initialValue = initialHour,
+                    modifier = Modifier.weight(1f),
+                    speed = 0.3f,
+                    onValueSelected = { hour ->
+                        selectedHour = hour
+                        onTimeSelected(selectedHour, selectedMinute)
+                    }
                 )
 
                 Icon(
@@ -49,19 +63,31 @@ fun AppClock(
                 )
 
                 ClockRectangle(
-                    text = minute,
-                    modifier = Modifier.weight(1f)
+                    range = 0..59,
+                    initialValue = initialMinute,
+                    modifier = Modifier.weight(1f),
+                    speed = 0.5f,
+                    onValueSelected = { minute ->
+                        selectedMinute = minute
+                        onTimeSelected(selectedHour, selectedMinute)
+                    }
                 )
             }
         }
     }
 }
 
+
 @Composable
 private fun ClockRectangle(
-    text: String,
-    modifier: Modifier = Modifier
+    range: IntRange = 0..100,
+    initialValue: Int = range.first,
+    modifier: Modifier = Modifier,
+    speed: Float = 1f,
+    onValueSelected: (Int) -> Unit
 ) {
+    var state by remember { mutableIntStateOf(initialValue) }
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -69,23 +95,41 @@ private fun ClockRectangle(
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
     ) {
-        AppText52(text)
+        AppNumberPicker(
+            range = range,
+            modifier = Modifier.width(100.dp),
+            flingMultiplier = speed,
+            initialSelectedNumber = initialValue,
+            onValueSelected = { value ->
+                state = value
+                onValueSelected(value)
+            }
+        )
     }
 }
+
 
 @Preview(uiMode = UI_MODE_NIGHT_NO)
 @Preview(uiMode = UI_MODE_NIGHT_YES)
 @Composable
 private fun AppClockPreview() {
+    var hour by remember { mutableIntStateOf(12) }
+    var minute by remember { mutableIntStateOf(35) }
+
     SnoozelooTheme {
         AppBackground {
-
             Box(
                 modifier = Modifier
                     .padding(16.dp)
             ) {
-
-                AppClock("12", "35")
+                AppClock(
+                    initialHour = hour,
+                    initialMinute = minute,
+                    onTimeSelected = { newHour, newMinute ->
+                        hour = newHour
+                        minute = newMinute
+                    }
+                )
             }
         }
     }

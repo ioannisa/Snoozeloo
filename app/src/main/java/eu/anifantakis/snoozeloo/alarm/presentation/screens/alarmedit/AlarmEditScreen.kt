@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppClock
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText24
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText52
 
 @Composable
 fun AlarmEditScreen(
@@ -19,7 +18,9 @@ fun AlarmEditScreen(
             .padding(horizontal = 16.dp)
     ) {
 
-        AppClock("12", "22")
+        AppClock(0, 0) { hour, minute ->
+            //
+        }
 
         AppText24("AlarmId -> $alarmId")
     }

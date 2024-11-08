@@ -1,11 +1,9 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm
 
-import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
@@ -13,8 +11,6 @@ import eu.anifantakis.snoozeloo.alarm.domain.AlarmsRepository
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -44,22 +40,13 @@ class AlarmViewModel(
 
     init {
         loadAlarms()
-
-        snapshotFlow { state.selectedAlarm }
-            .map { alarm ->
-                eventChannel.send(AlarmUiEvent.OnOpenAlarmEditor(alarm?.id ?: ""))
-            }
-            .launchIn(viewModelScope)
     }
 
     private fun loadAlarms() {
         viewModelScope.launch {
             repository.getAlarms()
-                .collect{
-
-                    Log.d("ALARMS_IS", "${it}")
-
-                    state = state.copy(alarms = it)
+                .collect { alarms ->
+                    state = state.copy(alarms = alarms)
                 }
         }
     }
@@ -78,11 +65,9 @@ class AlarmViewModel(
                 }
             }
             is AlarmUiEvent.OnAlarmDaysChanged -> {
-                // Immediately update the repository with the new days
                 viewModelScope.launch(Dispatchers.IO) {
                     val updatedAlarm = event.alarm.copy(selectedDays = event.selectedDays)
                     repository.upsertAlarm(updatedAlarm)
-                    println("Days updated in repository: ${event.selectedDays}")
                 }
             }
             is AlarmUiEvent.OnAlarmDeleted -> {
@@ -91,8 +76,10 @@ class AlarmViewModel(
                 }
             }
             is AlarmUiEvent.OnOpenAlarmEditor -> {
-                val alarm = state.alarms.firstOrNull { it.id == event.alarmId }
-                state = state.copy(selectedAlarm = alarm)
+                viewModelScope.launch {
+                    eventChannel.send(event)
+                    state = state.copy(selectedAlarm = state.alarms.firstOrNull { it.id == event.alarmId })
+                }
             }
         }
     }

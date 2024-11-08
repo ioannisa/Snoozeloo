@@ -39,13 +39,10 @@ fun AlarmScreenRoot(
     viewModel: AlarmViewModel = koinViewModel()
 ) {
     ObserveAsEvents(viewModel.events) { event ->
-
         when (event) {
             is AlarmUiEvent.OnOpenAlarmEditor -> {
-                println("DETAIL: ${event.alarmId}")
-                if (event.alarmId.trim() != "") {
+                if (event.alarmId.trim().isNotEmpty()) {
                     onOpenAlarmEditor(event.alarmId)
-
                 }
             }
             else -> { }
