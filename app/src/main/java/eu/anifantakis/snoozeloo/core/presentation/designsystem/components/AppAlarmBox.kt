@@ -138,6 +138,10 @@ private fun AppAlarmBoxPreview() {
                         is AlarmUiEvent.OnOpenAlarmEditor -> {}
                         is AlarmUiEvent.OnAddAlarm -> {}
                         is AlarmUiEvent.OnAlarmDeleted -> {}
+                        AlarmUiEvent.OnOpenRingtonesSetting -> {
+                        }
+
+                        is AlarmUiEvent.OnClickOnSpecificRingtone -> {}
                     }
                 },
                 modifier = Modifier.padding(UIConst.padding)

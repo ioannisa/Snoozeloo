@@ -1,5 +1,10 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.ringtonesetting
 
+import android.content.Context
+import android.content.res.Configuration.UI_MODE_NIGHT_NO
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import android.media.RingtoneManager
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,10 +12,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -24,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmUiEvent
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmViewModel
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmsState
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppCard
@@ -37,17 +46,22 @@ fun RingtoneSettingScreenRoot(
 ) {
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            else -> {
-
+            is AlarmUiEvent.OnClickOnSpecificRingtone -> {
+                viewModel.onEvent(AlarmUiEvent.OnClickOnSpecificRingtone(event.ringtone))
             }
+            AlarmUiEvent.OnOpenRingtonesSetting -> {
+                viewModel.onEvent(AlarmUiEvent.OnOpenRingtonesSetting)
+            }
+            else -> {}
         }
     }
 
-    RingtoneSettingScreen(onEvent = viewModel::onEvent)
+    RingtoneSettingScreen(state = viewModel.state, onEvent = viewModel::onEvent)
 }
 
 @Composable
 private fun RingtoneSettingScreen(
+    state: AlarmsState,
     onEvent: (AlarmUiEvent) -> Unit
 ) {
     Column {
@@ -64,16 +78,28 @@ private fun RingtoneSettingScreen(
             Icon(imageVector = Icons.back, contentDescription = "alarm")
         }
         Spacer(modifier = Modifier.height(24.dp))
-        RingtoneSettingItem(RingtoneItem.SILENT.text, isChecked = false, isSilent = true)
-        RingtoneSettingItem(RingtoneItem.DEFAULT.text, isChecked = true)
-        RingtoneSettingItem(RingtoneItem.BRIGHT_MORNING.text, isChecked = false)
-        RingtoneSettingItem(RingtoneItem.CUCKOO_CLOCK.text, isChecked = false)
-        RingtoneSettingItem(RingtoneItem.EARLY_TWILIGHT.text, isChecked = false)
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(state.listOfRingtones) { ringtone ->
+            RingtoneSettingItem(
+                title = ringtone.first,
+                isChecked = false,
+                onClickOnRingtone = {
+                    onEvent(AlarmUiEvent.OnClickOnSpecificRingtone(ringtone))
+                }
+            )
+        }
     }
 }
 
 @Composable
-fun RingtoneSettingItem(text: String, isChecked: Boolean, isSilent: Boolean = false) {
+fun RingtoneSettingItem(
+    title: String,
+    isChecked: Boolean,
+    onClickOnRingtone: () -> Unit,
+    isSilent: Boolean = false
+) {
     AppCard(modifier = Modifier.padding(vertical = 10.dp, horizontal = UIConst.padding)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -84,7 +110,7 @@ fun RingtoneSettingItem(text: String, isChecked: Boolean, isSilent: Boolean = fa
                     .clip(CircleShape)
                     .background(Color.Gray.copy(alpha = 0.2f))
                     .clickable {
-                        // todo: add the onEvent callback
+                        onClickOnRingtone()
                     }
             ) {
                 Icon(
@@ -96,9 +122,9 @@ fun RingtoneSettingItem(text: String, isChecked: Boolean, isSilent: Boolean = fa
                 )
             }
 
-            AppText14(text, modifier = Modifier.weight(1f))
+            AppText14(title, modifier = Modifier.weight(1f))
             if (isChecked)
-                // todo: fix background issue
+            // todo: fix background issue
                 Icon(
                     imageVector = Icons.checked,
                     tint = MaterialTheme.colorScheme.inversePrimary,
@@ -108,10 +134,12 @@ fun RingtoneSettingItem(text: String, isChecked: Boolean, isSilent: Boolean = fa
     }
 }
 
+@Preview(uiMode = UI_MODE_NIGHT_NO)
+@Preview(uiMode = UI_MODE_NIGHT_YES)
 @Composable
 @Preview
 fun RingtoneSettingScreenPreview() {
-    RingtoneSettingScreen() {
+    RingtoneSettingScreen(state = AlarmsState()) {
 
     }
 }

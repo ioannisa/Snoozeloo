@@ -16,11 +16,13 @@ import androidx.navigation.toRoute
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmScreenRoot
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmedit.AlarmEditScreen
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.ringtonesetting.RingtoneSettingScreenRoot
 import kotlinx.serialization.Serializable
 
 sealed interface NavGraph {
     @Serializable data object Alarms: NavGraph
     @Serializable data class AlarmEditor(val alarmId: String): NavGraph
+    @Serializable data object RingtoneSetting: NavGraph
 }
 
 @Composable
@@ -58,8 +60,15 @@ fun NavigationRoot(
                     val alarmId = args.alarmId
 
                     AlarmEditScreen(
-                        alarmId = alarmId
+                        alarmId = alarmId,
+                        onOpenRingtoneSetting = {
+                            navController.navigate(NavGraph.RingtoneSetting)
+                        }
                     )
+                }
+
+                composable<NavGraph.RingtoneSetting> {
+                    RingtoneSettingScreenRoot()
                 }
             }
         }
