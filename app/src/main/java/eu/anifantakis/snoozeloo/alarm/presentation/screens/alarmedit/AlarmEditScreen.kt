@@ -2,6 +2,8 @@ package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmedit
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,7 +17,8 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun AlarmEditScreen(
     alarmId: String,
-    viewModel: AlarmEditViewModel = koinViewModel()
+    viewModel: AlarmEditViewModel = koinViewModel(),
+    onOpenRingtoneSetting: () -> Unit
 ) {
     val alarm by viewModel.alarm.collectAsStateWithLifecycle()
     LaunchedEffect(alarmId) {
@@ -36,6 +39,12 @@ fun AlarmEditScreen(
         }
 
         AppText24("AlarmId -> $alarmId")
+
+        Button(onClick = {
+            onOpenRingtoneSetting()
+        }) {
+            Text("Open Ringtone Setting")
+        }
     }
 
 }
