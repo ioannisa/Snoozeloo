@@ -1,11 +1,15 @@
 package eu.anifantakis.snoozeloo.alarm.data
 
 import android.content.Context
+import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
 import eu.anifantakis.snoozeloo.alarm.domain.RingtoneRepository
+import kotlinx.coroutines.delay
 
-class RingtoneRepositoryImpl(private val context: Context): RingtoneRepository {
+class RingtoneRepositoryImpl(private val context: Context) : RingtoneRepository {
+
+    private var currentRingtone: Ringtone? = null
 
     override fun getDefaultRingtones(): List<Pair<String, Uri>> {
         val ringtoneManager = RingtoneManager(context)
@@ -21,6 +25,26 @@ class RingtoneRepositoryImpl(private val context: Context): RingtoneRepository {
 
         cursor.close()
         return ringtones
+    }
+
+    override suspend fun play(uri: Uri) {
+        // Stop the currently playing ringtone, if any
+        currentRingtone?.let {
+            if (it.isPlaying) {
+                it.stop()
+            }
+        }
+
+        val ringtone = RingtoneManager.getRingtone(context, uri)
+        currentRingtone = ringtone
+        ringtone.play()
+
+        delay(5000)
+
+        // Stop if still playing after the delay
+        if (ringtone.isPlaying) {
+            ringtone.stop()
+        }
     }
 
 }
