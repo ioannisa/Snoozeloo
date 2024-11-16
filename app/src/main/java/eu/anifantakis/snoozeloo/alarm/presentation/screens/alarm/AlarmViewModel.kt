@@ -56,6 +56,7 @@ class AlarmViewModel(
     val events = eventChannel.receiveAsFlow()
 
     private var minuteTickerJob: Job? = null
+    private var currentAlarmCount = 0
 
     init {
         loadAlarms()
@@ -68,6 +69,21 @@ class AlarmViewModel(
 
             repository.getAlarms()
                 .collect { alarms ->
+                    // If we've just added a new alarm (count increased by 1)
+                    if (alarms.size > currentAlarmCount) {
+                        // Get the most recently added alarm (it will be the one that's not in our current state)
+                        val newAlarm = alarms.firstOrNull { alarm ->
+                            state.alarms.none { it.alarm.id == alarm.id }
+                        }
+
+                        // If we found the new alarm, select it to open the editor
+                        newAlarm?.let {
+                            onAction(AlarmScreenAction.SelectAlarmScreen(it))
+                        }
+                    }
+
+                    currentAlarmCount = alarms.size
+
                     state = state.copy(
                         alarms = alarms.map { alarm ->
                             AlarmUiState(
@@ -143,6 +159,7 @@ class AlarmViewModel(
             }
             is AlarmScreenAction.DeleteAlarmScreen -> {
                 viewModelScope.launch(Dispatchers.IO) {
+                    alarmScheduler.cancel(action.alarm)
                     repository.deleteAlarm(action.alarm.id)
                 }
             }

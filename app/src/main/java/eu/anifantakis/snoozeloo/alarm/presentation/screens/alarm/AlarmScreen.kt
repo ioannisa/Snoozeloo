@@ -133,7 +133,7 @@ private fun AlarmListScreen(
             )
         }
 
-        if (alarms.isEmpty()) {
+        if (alarms.none { !it.alarm.temporary }) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -158,7 +158,7 @@ private fun AlarmListScreen(
 
         LazyColumn {
             items(
-                items = alarms,
+                items = alarms.filter { !it.alarm.temporary },
                 key = { item -> item.alarm.id }
             ) { alarmUiState ->
                 SwipeableAlarmItem(

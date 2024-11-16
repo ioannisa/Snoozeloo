@@ -15,6 +15,7 @@ data class AlarmEntity(
     val ringtoneUri: String? = null,
     val volume: Float = 0.5f,
     val vibrate: Boolean = true,
+    val temporary: Boolean = true,
     val mo: Boolean = false,
     val tu: Boolean = false,
     val we: Boolean = false,

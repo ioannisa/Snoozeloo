@@ -10,7 +10,8 @@ data class Alarm(
     val ringtoneTitle: String = "",
     val ringtoneUri: String? = "",
     val volume: Float = 0.5f,
-    val vibrate: Boolean = true
+    val vibrate: Boolean = true,
+    val temporary: Boolean = true
 )
 
 data class DaysOfWeek(

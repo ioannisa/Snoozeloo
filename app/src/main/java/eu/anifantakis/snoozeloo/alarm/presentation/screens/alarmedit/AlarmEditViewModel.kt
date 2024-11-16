@@ -7,6 +7,7 @@ import eu.anifantakis.snoozeloo.alarm.domain.AlarmsRepository
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.alarm.domain.datasource.AlarmId
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.AlarmUiState
+import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
 import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
 import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
@@ -40,7 +41,8 @@ sealed interface AlarmEditorScreenEvent {
 }
 
 class AlarmEditViewModel(
-    private val repository: AlarmsRepository
+    private val repository: AlarmsRepository,
+    private val alarmScheduler: AlarmScheduler
 ): ViewModel() {
 
     private val _alarmUiState = MutableStateFlow<AlarmUiState?>(null)
@@ -119,6 +121,20 @@ class AlarmEditViewModel(
             }
 
             is AlarmEditorScreenAction.SaveAlarm -> {
+
+                // saving a new alarm has some these extra steps
+                _alarmUiState.value?.let { currentState ->
+                    if (currentState.alarm.temporary) {
+                        val updatedAlarm = currentState.alarm.copy(
+                            temporary = false,
+                            isEnabled = true
+                        )
+                        repository.updateEditedAlarm(updatedAlarm)
+                        alarmScheduler.schedule(updatedAlarm)
+                    }
+                }
+
+                // common steps for new and older alarms
                 viewModelScope.launch(Dispatchers.IO) {
                     repository.saveEditedAlarm()
                     // After saving, update the original alarm to reset change detection
@@ -138,6 +154,14 @@ class AlarmEditViewModel(
                         hasChanges = false,
                         alarm = originalAlarm
                     )
+
+                    viewModelScope.launch(Dispatchers.IO) {
+                        _alarmUiState.value?.let { currentState ->
+                            if (currentState.alarm.temporary) {
+                                repository.deleteAlarm(currentState.alarm.id)
+                            }
+                        }
+                    }
 
                     viewModelScope.launch {
                         if (hadTimeChanges) {

@@ -25,7 +25,8 @@ fun AlarmEntity.toAlarm(): Alarm {
         ringtoneTitle = ringtoneTitle,
         ringtoneUri = ringtoneUri,
         volume = volume,
-        vibrate = vibrate
+        vibrate = vibrate,
+        temporary = temporary
     )
 }
 
@@ -47,6 +48,7 @@ fun Alarm.toEntity(): AlarmEntity {
         ringtoneTitle = ringtoneTitle,
         ringtoneUri = ringtoneUri,
         volume = volume,
-        vibrate = vibrate
+        vibrate = vibrate,
+        temporary = temporary
     )
 }

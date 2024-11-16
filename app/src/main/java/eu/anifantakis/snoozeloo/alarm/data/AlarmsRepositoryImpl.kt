@@ -56,7 +56,12 @@ class AlarmsRepositoryImpl(
             hour = 0,
             minute = 0,
             title = "",
-            isEnabled = true,
+            isEnabled = false,
+            ringtoneTitle = "",
+            ringtoneUri = null,
+            volume = 0.5f,
+            vibrate = true,
+            temporary = true,
             selectedDays = DaysOfWeek(
                 mo = true,
                 tu = true,
