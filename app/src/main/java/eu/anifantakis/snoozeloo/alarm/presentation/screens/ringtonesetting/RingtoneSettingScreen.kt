@@ -126,7 +126,10 @@ fun RingtoneSettingItem(
     AppCard(modifier = Modifier
         .padding(vertical = UIConst.paddingExtraSmall)
         .clickable {
-            onClickOnRingtone(ringtoneItem)
+            onClickOnRingtone(ringtoneItem.copy(
+                title = if (isSilent) "Silent" else ringtoneItem.title,
+                uri = if (isSilent) null else ringtoneItem.uri
+            ))
         }
     ) {
         Row(

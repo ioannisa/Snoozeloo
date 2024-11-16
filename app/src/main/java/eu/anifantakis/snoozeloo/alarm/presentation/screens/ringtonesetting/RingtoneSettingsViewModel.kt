@@ -163,7 +163,7 @@ class RingtoneSettingsViewModel(
                     // Update local state
                     val updatedAlarm = currentAlarm.copy(
                         ringtoneTitle = selectedRingtone.title,
-                        ringtoneUri = selectedRingtone.uri?.toString() ?: ""
+                        ringtoneUri = selectedRingtone.uri?.toString()
                     )
                     state = state.copy(currentAlarm = updatedAlarm)
 
