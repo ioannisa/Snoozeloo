@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">Snoozeloo</string>
+    <string name="get_eight_hours_of_sleep">Go to bed at %1$s to get 8h of sleep</string>
+    <string name="your_alarms">Your Alarms</string>
+    <string name="empty_alarms_screen">It\'s empty! Add the first alarm so you don\'t miss an important moment!</string>
+
+    <string name="empty_string"> </string>
+    <string name="default_alarm_title">Alarm</string>
+
+    <string name="clock_12h">12H</string>
+    <string name="clock_24h">24H</string>
+
+    <string name="alarm_in_less_than_a_minute">Alarm in less than a minute</string>
+    <string name="alarm_in_x_minutes">Alarm in %1$d minutes</string>
+    <string name="alarm_in_1_hour">Alarm in 1 hour</string>
+    <string name="alarm_in_1_hour_and_x_minutes">Alarm in 1h and %1$dmin</string>
+    <string name="alarm_in_x_hours">Alarm in %1$d hours</string>
+    <string name="alarm_in_x_hours_and_x_minutes">Alarm in %1$dh %2$dmin</string>
+
+    <string name="alarm_in_1_day">Alarm in 1 day</string>
+    <string name="alarm_in_1_day_and_1_hour">Alarm in 1 day and 1 hour</string>
+    <string name="alarm_in_1_day_and_x_minutes">Alarm in 1 day and %1$d minutes</string>
+    <string name="alarm_in_1_day_and_x_hours">Alarm in 1 day and %1$d hours</string>
+    <string name="alarm_in_1_day_1_hour_and_x_minutes">Alarm in 1 day, 1h %1$dmin</string>
+    <string name="alarm_in_1_day_x_hours_and_x_minutes">Alarm in 1 day, %1$dh %2$dmin</string>
+
+    <string name="alarm_in_x_days">Alarm in %1$d days</string>
+    <string name="alarm_in_x_days_and_1_hour">Alarm in %1$d days and 1 hour</string>
+    <string name="alarm_in_x_days_and_x_minutes">Alarm in %1$d days and %2$d minutes</string>
+    <string name="alarm_in_x_days_and_x_hours">Alarm in %1$d days and %2$d hours</string>
+    <string name="alarm_in_x_days_1_hour_and_x_minutes">Alarm in %1$d days, 1h %2$dmin</string>
+    <string name="alarm_in_x_days_x_hours_and_x_minutes">Alarm in %1$d days, %2$dh %3$dmin</string>
+    <string name="repeat">Repeat</string>
+    <string name="alarm_name">Alarm Name</string>
+    <string name="alarm_ringtone">Alarm Ringtone</string>
+    <string name="save">Save</string>
+    <string name="default_ringtone_name">Default</string>
+    <string name="alarm_volume">Alarm Volume</string>
+    <string name="vibrate">Vibrate</string>
+    <string name="permission_overlay_request">Overlay Permission Required</string>
+    <string name="permission_overlay_description">To display an alarm window so you can dismiss/snooze it, you need to grant the overlay permission.\n\nPlease grant the permission to continue.</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="permission_notifications_request">Enable Notifications?</string>
+    <string name="no_thanks">No Thanks</string>
+    <string name="enable">Enable</string>
+    <string name="permission_notifications_description">Would you like to enable notifications for this app?</string>
+
+</resources>
