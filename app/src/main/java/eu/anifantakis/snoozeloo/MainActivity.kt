@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel by viewModel<MainViewModel>()
     private var showOverlayDialog by mutableStateOf(false)
     private var showNotificationDialog by mutableStateOf(false)
+    private var shouldShowNotificationDialog by mutableStateOf(false) // New state to track if we should show notification dialog
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -64,6 +65,10 @@ class MainActivity : ComponentActivity() {
                         text = { Text(stringResource(R.string.permission_overlay_description)) },
                         confirmButton = {
                             TextButton(onClick = {
+                                showOverlayDialog = false
+                                if (shouldShowNotificationDialog) {
+                                    showNotificationDialog = true
+                                }
                                 val intent = Intent(
                                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                     Uri.parse("package:$packageName")
@@ -113,14 +118,22 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkPermissions() {
-        showOverlayDialog = !Settings.canDrawOverlays(this)
+        val needsOverlay = !Settings.canDrawOverlays(this)
+        showOverlayDialog = needsOverlay
 
         if (Build.VERSION.SDK_INT >= 33) {
             val hasAskedBefore = getSharedPreferences("permissions", MODE_PRIVATE)
                 .getBoolean("notifications_asked", false)
 
             if (!hasAskedBefore) {
-                showNotificationDialog = true
+                if (needsOverlay) {
+                    // Store that we need to show notification dialog after overlay dialog
+                    shouldShowNotificationDialog = true
+                } else {
+                    // Show notification dialog immediately if no overlay dialog needed
+                    showNotificationDialog = true
+                }
+
                 getSharedPreferences("permissions", MODE_PRIVATE).edit()
                     .putBoolean("notifications_asked", true)
                     .apply()
