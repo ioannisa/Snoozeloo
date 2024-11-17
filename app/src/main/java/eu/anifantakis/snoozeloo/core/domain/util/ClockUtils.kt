@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.util.Locale
 
 enum class Meridiem {
     AM,
@@ -40,5 +42,32 @@ object ClockUtils {
     fun isMoreThanEightHoursAway(alarmHour: Int, alarmMinute: Int, daysOfWeek: DaysOfWeek): Boolean {
         val duration = calculateTimeUntilNextAlarm(alarmHour, alarmMinute, daysOfWeek)
         return duration.toHours() >= 8
+    }
+
+    fun toTime12String(hour: Int, minute: Int): String {
+        val (hour12, meridiem) = get12HourFormatAndMeridiem(hour)
+        return String.format(Locale.ROOT, "%d:%02d %s", hour12, minute, meridiem.name)
+    }
+
+    fun toTime24String(hour: Int, minute: Int): String {
+        return String.format(Locale.ROOT, "%02d:%02d", hour, minute)
+    }
+
+    // Extension functions for LocalDateTime
+    fun LocalDateTime.toTime12String(): String {
+        return toTime12String(hour, minute)
+    }
+
+    fun LocalDateTime.toTime24String(): String {
+        return toTime24String(hour, minute)
+    }
+
+    // Extension functions for LocalTime
+    fun LocalTime.toTime12String(): String {
+        return toTime12String(hour, minute)
+    }
+
+    fun LocalTime.toTime24String(): String {
+        return toTime24String(hour, minute)
     }
 }

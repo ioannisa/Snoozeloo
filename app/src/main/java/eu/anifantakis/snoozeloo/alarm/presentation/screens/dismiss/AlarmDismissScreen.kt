@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils.toTime24String
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
@@ -25,6 +26,7 @@ import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppOut
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText24
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText82
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
+import java.time.LocalTime
 
 @Composable
 fun AlarmDismissScreen(
@@ -51,13 +53,12 @@ fun AlarmDismissScreen(
                     contentDescription = "Logo",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-
                         .width(55.dp)
                         .height(55.dp)
                 )
 
                 AppText82(
-                    text = "10:00",
+                    text = LocalTime.now().toTime24String(),
                     modifier = Modifier.padding(top = 16.dp)
                 )
 
@@ -71,13 +72,12 @@ fun AlarmDismissScreen(
                     onClick = onSnooze,
                     contentPadding = PaddingValues(vertical = 16.dp)
                 )
-                AppOutlinedActionButton (
+                AppOutlinedActionButton(
                     text = "Dismiss",
                     onClick = onDismiss
                 )
             }
         }
-
     }
 }
 
