@@ -2,6 +2,7 @@ package eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.alarmtonesett
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,11 @@ fun AlarmToneSettingScreenRoot(
     onGoBack: (String, String?) -> Unit,
     viewModel: AlarmToneSettingViewModel = koinViewModel()
 ) {
+    // Handle system back button
+    BackHandler {
+        viewModel.onAction(AlarmToneAction.NavigateBack)
+    }
+
     LaunchedEffect(Unit) {
         viewModel.onAction(AlarmToneAction.OnOpenRingtonesSetting(alarmToneUri = alarmToneUri))
     }
