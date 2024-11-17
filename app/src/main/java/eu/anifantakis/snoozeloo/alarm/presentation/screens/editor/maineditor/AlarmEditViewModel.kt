@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmedit
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.maineditor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

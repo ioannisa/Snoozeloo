@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.alarm.presentation.screens.ringtonesetting
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.alarmtonesetting
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES

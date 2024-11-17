@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.alarm.presentation.screens.ringtonesetting
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.alarmtonesetting
 
 import android.net.Uri
 import androidx.compose.runtime.Immutable

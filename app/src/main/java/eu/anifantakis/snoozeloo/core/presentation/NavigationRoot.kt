@@ -14,8 +14,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms.AlarmsScreenRoot
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmedit.AlarmEditScreenRoot
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.ringtonesetting.AlarmToneSettingScreenRoot
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.maineditor.AlarmEditScreenRoot
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.alarmtonesetting.AlarmToneSettingScreenRoot
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppScreen
 import kotlinx.serialization.Serializable
 
