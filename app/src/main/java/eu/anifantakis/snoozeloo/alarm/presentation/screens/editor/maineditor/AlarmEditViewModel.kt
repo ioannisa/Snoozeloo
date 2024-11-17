@@ -12,14 +12,14 @@ import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
 import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
@@ -43,163 +43,169 @@ sealed interface AlarmEditorScreenEvent {
     data object OnClose: AlarmEditorScreenEvent
 }
 
+/**
+ * ViewModel responsible for managing the alarm editing screen.
+ * Handles alarm creation, modification, and state management.
+ *
+ * @param alarmId Unique identifier of the alarm being edited
+ * @param repository Repository for alarm data operations
+ * @param alarmScheduler Scheduler for managing alarm timing
+ */
 class AlarmEditViewModel(
     alarmId: String,
     private val repository: AlarmsRepository,
     private val alarmScheduler: AlarmScheduler
 ): ViewModel() {
-    private val _alarmUiState = MutableStateFlow<AlarmUiState?>(null)
-    val alarmUiState = _alarmUiState.asStateFlow()
 
+    // Base state holding the current alarm data
+    private val _baseAlarmState = MutableStateFlow<Alarm?>(null)
+
+    // Original alarm state used to detect changes and handle cancellations
+    private var originalAlarm: Alarm? = null
+
+    // Flow that emits a new value every minute, used to update time-based UI elements
+    private val minuteTicker = ClockUtils.createMinuteTickerFlow()
+        .stateIn(
+            scope = viewModelScope,
+            // Stop collecting after 5 seconds of no subscribers to handle configuration changes
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = System.currentTimeMillis()
+        )
+
+    // Combines base alarm state with minute ticker to create derived UI state
+    val alarmUiState = combine(
+        _baseAlarmState,
+        minuteTicker
+    ) { currentAlarm, _ ->
+        currentAlarm?.let { alarm ->
+            AlarmUiState(
+                alarm = alarm,
+                // Calculate time until next alarm trigger, updates every minute
+                timeUntilNextAlarm = calculateTimeUntilNextAlarm(
+                    alarm.hour,
+                    alarm.minute,
+                    alarm.selectedDays
+                ).formatTimeUntil(),
+                // Determine if current state differs from original
+                hasChanges = originalAlarm?.let { originalAlarm ->
+                    alarm != originalAlarm || alarm.temporary
+                } ?: false
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+
+    // Channel for one-time events (navigation, snackbar messages, etc.)
     private val eventChannel = Channel<AlarmEditorScreenEvent>()
     val events = eventChannel.receiveAsFlow()
 
-    private var minuteTickerJob: Job? = null
-    private var originalAlarm: Alarm? = null
-
     init {
         loadAlarm(alarmId)
-        startMinuteTicker()
     }
 
-    private fun startMinuteTicker() {
-        minuteTickerJob?.cancel()
-        minuteTickerJob = viewModelScope.launch {
-            combine(
-                ClockUtils.createMinuteTickerFlow(),
-                _alarmUiState
-            ) { _, state -> // We don't need the ticker value, just need to know it ticked
-                state?.let { currentState ->
-                    currentState.copy(
-                        timeUntilNextAlarm = calculateTimeUntilNextAlarm(
-                            currentState.alarm.hour,
-                            currentState.alarm.minute,
-                            currentState.alarm.selectedDays
-                        ).formatTimeUntil()
-                    )
-                }
-            }.collect { updatedState ->
-                updatedState?.let { _alarmUiState.value = it }
-            }
+    /**
+     * Helper function to update the alarm state while maintaining null safety
+     */
+    private fun updateAlarm(update: (Alarm) -> Alarm) {
+        _baseAlarmState.update { currentState ->
+            currentState?.let { update(it) }
         }
     }
 
-    private fun updateState(update: (AlarmUiState) -> AlarmUiState) {
-        _alarmUiState.update { currentState ->
-            currentState?.let { state ->
-                val updatedState = update(state)
-                updatedState.copy(
-                    timeUntilNextAlarm = calculateTimeUntilNextAlarm(
-                        updatedState.alarm.hour,
-                        updatedState.alarm.minute,
-                        updatedState.alarm.selectedDays
-                    ).formatTimeUntil(),
-                    hasChanges = originalAlarm?.let { original ->
-                        original != updatedState.alarm || updatedState.alarm.temporary
-                    } ?: false
-                )
-            }
-        }
-    }
-
+    /**
+     * Handles all UI actions for the alarm editor screen
+     */
     fun onAction(action: AlarmEditorScreenAction) {
         when (action) {
+            // Update alarm day selection
             is AlarmEditorScreenAction.UpdateAlarmDays -> {
-                updateState { state ->
-                    state.copy(alarm = state.alarm.copy(
-                        selectedDays = action.days
-                    ))
-                }
+                updateAlarm { it.copy(selectedDays = action.days) }
             }
+            // Update alarm time
             is AlarmEditorScreenAction.UpdateAlarmTime -> {
-                updateState { state ->
-                    state.copy(alarm = state.alarm.copy(
-                        hour = action.hour,
-                        minute = action.minute
-                    ))
-                }
+                updateAlarm { it.copy(
+                    hour = action.hour,
+                    minute = action.minute
+                )}
             }
+            // Update alarm title, trimming whitespace
+            is AlarmEditorScreenAction.UpdateAlarmTitle -> {
+                updateAlarm { it.copy(title = action.title.trim()) }
+            }
+            // Update alarm volume
+            is AlarmEditorScreenAction.UpdateAlarmVolume -> {
+                updateAlarm { it.copy(volume = action.volume) }
+            }
+            // Toggle alarm vibration
+            is AlarmEditorScreenAction.UpdateAlarmVibration -> {
+                updateAlarm { it.copy(vibrate = action.vibrate) }
+            }
+            // Update alarm ringtone settings
+            is AlarmEditorScreenAction.UpdateRingtoneResult -> {
+                updateAlarm { it.copy(
+                    ringtoneTitle = action.title,
+                    ringtoneUri = action.uri
+                )}
+            }
+            // Open ringtone selection screen
             is AlarmEditorScreenAction.OpenRingtoneSettings -> {
                 viewModelScope.launch {
                     eventChannel.send(AlarmEditorScreenEvent.OnOpenRingtoneSettings)
                 }
             }
-            is AlarmEditorScreenAction.UpdateAlarmTitle -> {
-                updateState { state ->
-                    state.copy(alarm = state.alarm.copy(
-                        title = action.title.trim()
-                    ))
-                }
-            }
-            is AlarmEditorScreenAction.UpdateAlarmVolume -> {
-                updateState { state ->
-                    state.copy(alarm = state.alarm.copy(
-                        volume = action.volume
-                    ))
-                }
-            }
-            is AlarmEditorScreenAction.UpdateAlarmVibration -> {
-                updateState { state ->
-                    state.copy(alarm = state.alarm.copy(
-                        vibrate = action.vibrate
-                    ))
-                }
-            }
+            // Save alarm changes
             is AlarmEditorScreenAction.SaveAlarm -> {
                 viewModelScope.launch(Dispatchers.IO) {
-                    _alarmUiState.value?.let { currentState ->
-                        // Handle temporary alarm
-                        val updatedAlarm = if (currentState.alarm.temporary) {
-                            currentState.alarm.copy(
+                    _baseAlarmState.value?.let { currentAlarm ->
+                        // Convert temporary alarm to permanent if needed
+                        val updatedAlarm = if (currentAlarm.temporary) {
+                            currentAlarm.copy(
                                 temporary = false,
                                 isEnabled = true
                             )
                         } else {
-                            currentState.alarm
+                            currentAlarm
                         }
 
-                        // Schedule if not temporary
+                        // Schedule alarm if it's not temporary
                         if (!updatedAlarm.temporary) {
                             alarmScheduler.schedule(updatedAlarm)
                         }
 
-                        // Save alarm
+                        // Persist alarm to storage
                         repository.upsertAlarm(updatedAlarm)
 
-                        // Update original alarm to reset change detection
+                        // Update state references
                         originalAlarm = updatedAlarm
-                        updateState { state ->
-                            state.copy(
-                                alarm = updatedAlarm,
-                                hasChanges = false
-                            )
-                        }
+                        _baseAlarmState.value = updatedAlarm
 
                         eventChannel.send(AlarmEditorScreenEvent.OnClose)
                     }
                 }
             }
+            // Cancel changes and restore original state
             is AlarmEditorScreenAction.CancelChanges -> {
-                originalAlarm?.let { originalAlarm ->
-                    val hadTimeChanges = alarmUiState.value?.alarm?.let { currentAlarm ->
-                        currentAlarm.hour != originalAlarm.hour ||
-                                currentAlarm.minute != originalAlarm.minute
+                originalAlarm?.let { original ->
+                    // Check if time was modified for animation purposes
+                    val hadTimeChanges = _baseAlarmState.value?.let { currentAlarm ->
+                        currentAlarm.hour != original.hour || currentAlarm.minute != original.minute
                     } ?: false
 
-                    updateState { state ->
-                        state.copy(
-                            alarm = originalAlarm,
-                            hasChanges = false
-                        )
-                    }
+                    // Restore original state
+                    _baseAlarmState.value = original
 
                     viewModelScope.launch(Dispatchers.IO) {
-                        _alarmUiState.value?.let { currentState ->
-                            if (currentState.alarm.temporary) {
-                                repository.deleteAlarm(currentState.alarm.id)
+                        _baseAlarmState.value?.let { currentState ->
+                            // Delete temporary alarms when cancelling
+                            if (currentState.temporary) {
+                                repository.deleteAlarm(currentState.id)
                             }
                         }
 
+                        // Add delay for time change animation
                         if (hadTimeChanges) {
                             delay(400L)
                         }
@@ -207,53 +213,40 @@ class AlarmEditViewModel(
                     }
                 }
             }
+            // Show validation error for missing days selection
             is AlarmEditorScreenAction.ShowDaysValidationError -> {
                 viewModelScope.launch {
                     eventChannel.send(AlarmEditorScreenEvent.OnShowSnackBar("All alarms need at least one active day"))
                 }
             }
-            is AlarmEditorScreenAction.UpdateRingtoneResult -> {
-                updateState { state ->
-                    state.copy(alarm = state.alarm.copy(
-                        ringtoneTitle = action.title,
-                        ringtoneUri = action.uri
-                    ))
-                }
-            }
         }
     }
 
+    // Flag to prevent multiple loads of the same alarm
     private var loaded = false
 
+    /**
+     * Loads alarm data from repository
+     * Prevents multiple loads of the same alarm
+     */
     fun loadAlarm(id: AlarmId) {
         if (loaded) return
 
         loaded = true
         viewModelScope.launch {
             try {
+                // Load alarm data asynchronously
                 val alarmDeferred = async { repository.getAlarm(id) }
                 val loadedAlarm = alarmDeferred.await()
-                originalAlarm = loadedAlarm
 
-                val fetchedAlarm = loadedAlarm.copy()
-                _alarmUiState.value = AlarmUiState(
-                    alarm = fetchedAlarm,
-                    timeUntilNextAlarm = calculateTimeUntilNextAlarm(
-                        fetchedAlarm.hour,
-                        fetchedAlarm.minute,
-                        fetchedAlarm.selectedDays
-                    ).formatTimeUntil(),
-                    hasChanges = fetchedAlarm.temporary
-                )
+                // Store original and create working copy
+                originalAlarm = loadedAlarm
+                _baseAlarmState.value = loadedAlarm.copy()
             } catch (e: Exception) {
+                // Rethrow cancellation exceptions, log others
                 if (e is CancellationException) throw e
                 e.printStackTrace()
             }
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        minuteTickerJob?.cancel()
     }
 }
