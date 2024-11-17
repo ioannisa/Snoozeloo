@@ -56,6 +56,8 @@ class AlarmViewModel(
     val events = eventChannel.receiveAsFlow()
 
     private var minuteTickerJob: Job? = null
+
+    private var isInitialLoad = true
     private var currentAlarmCount = 0
 
     init {
@@ -69,8 +71,8 @@ class AlarmViewModel(
 
             repository.getAlarms()
                 .collect { alarms ->
-                    // If we've just added a new alarm (count increased by 1)
-                    if (alarms.size > currentAlarmCount) {
+                    // Only check for new alarms if it's not the initial load
+                    if (!isInitialLoad && alarms.size > currentAlarmCount) {
                         // Get the most recently added alarm (it will be the one that's not in our current state)
                         val newAlarm = alarms.firstOrNull { alarm ->
                             state.alarms.none { it.alarm.id == alarm.id }
@@ -83,6 +85,7 @@ class AlarmViewModel(
                     }
 
                     currentAlarmCount = alarms.size
+                    isInitialLoad = false
 
                     state = state.copy(
                         alarms = alarms.map { alarm ->
