@@ -69,17 +69,16 @@ class AlarmEditViewModel(
             currentState?.let { state ->
                 val updatedState = update(state)
                 // Compare the updated alarm with original alarm and set hasChanges accordingly
-                val finalState = updatedState.copy(
+                updatedState.copy(
                     timeUntilNextAlarm = calculateTimeUntilNextAlarm(
-                        updatedState.alarm.hour,
-                        updatedState.alarm.minute,
-                        updatedState.alarm.selectedDays
+                        state.alarm.hour,
+                        state.alarm.minute,
+                        state.alarm.selectedDays
                     ).formatTimeUntil(),
                     hasChanges = originalAlarm?.let { original ->
                         original != updatedState.alarm || updatedState.alarm.temporary
                     } ?: false
                 )
-                finalState
             }
         }
     }
