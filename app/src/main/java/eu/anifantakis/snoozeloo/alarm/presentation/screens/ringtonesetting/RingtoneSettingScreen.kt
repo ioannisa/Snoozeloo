@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -32,6 +34,7 @@ import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppCard
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText14
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.LocalDimmingState
 import eu.anifantakis.snoozeloo.core.presentation.ui.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 
@@ -53,10 +56,31 @@ fun RingtoneSettingScreenRoot(
         }
     }
 
-    RingtoneSettingScreen(
-        state = viewModel.state,
-        onAction = viewModel::onAction
-    )
+    val dimmingState = LocalDimmingState.current
+    LaunchedEffect(viewModel.state.isLoading) {
+        dimmingState.isDimmed = viewModel.state.isLoading
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top
+        ) {
+            RingtoneSettingScreen(
+                state = viewModel.state,
+                onAction = viewModel::onAction
+            )
+        }
+
+        if (viewModel.state.isLoading) {
+            CircularProgressIndicator()
+        }
+    }
 }
 
 @Composable

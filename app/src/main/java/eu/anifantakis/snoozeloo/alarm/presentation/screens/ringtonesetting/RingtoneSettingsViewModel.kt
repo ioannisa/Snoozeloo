@@ -25,7 +25,8 @@ sealed interface RingtoneAction {
 @Immutable
 data class RingtoneState(
     val currentAlarm: Alarm? = null,
-    val ringtones: List<RingtoneItem> = emptyList()
+    val ringtones: List<RingtoneItem> = emptyList(),
+    val isLoading: Boolean = false
 )
 
 sealed interface RingtoneEvent {
@@ -69,6 +70,8 @@ class RingtoneSettingsViewModel(
     private fun loadRingtones(alarmId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                state = state.copy(isLoading = true)
+
                 val alarm = alarmRepository.getAlarm(alarmId)
                 // Changed logic: alarm has no ringtone if either title or URI is empty/null
                 val hasNoRingtoneSelected = alarm.ringtoneTitle.isEmpty() || alarm.ringtoneUri.isNullOrEmpty()
@@ -106,7 +109,8 @@ class RingtoneSettingsViewModel(
 
                     state = state.copy(
                         ringtones = updatedRingtones,
-                        currentAlarm = updatedAlarm
+                        currentAlarm = updatedAlarm,
+                        isLoading = false
                     )
 
                     return@launch
@@ -147,11 +151,13 @@ class RingtoneSettingsViewModel(
 
                 state = state.copy(
                     ringtones = ringtoneItems,
-                    currentAlarm = updatedAlarm
+                    currentAlarm = updatedAlarm,
+                    isLoading = false
                 )
 
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load ringtones")
+                state = state.copy(isLoading = false)
             }
         }
     }
