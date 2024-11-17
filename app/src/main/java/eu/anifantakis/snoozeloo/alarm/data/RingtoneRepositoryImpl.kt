@@ -16,7 +16,7 @@ class RingtoneRepositoryImpl(
     private var currentUri: Uri? = null
     private var isPlaying: Boolean = false
 
-    override fun getDefaultRingtones(): List<Pair<String, Uri>> {
+    override fun getAllRingtones(): List<Pair<String, Uri>> {
         return try {
             val defaultAlarm = getSystemDefaultAlarmRingtone()
             val ringtoneList = mutableListOf(defaultAlarm) // Add default alarm first

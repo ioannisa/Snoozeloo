@@ -40,18 +40,18 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AlarmToneSettingScreenRoot(
-    alarmId: String,
-    onGoBack: () -> Unit,
+    alarmToneUri: String?,
+    onGoBack: (String, String?) -> Unit,
     viewModel: AlarmToneSettingViewModel = koinViewModel()
 ) {
     LaunchedEffect(Unit) {
-        viewModel.onAction(AlarmToneAction.OnOpenRingtonesSetting(alarmId = alarmId))
+        viewModel.onAction(AlarmToneAction.OnOpenRingtonesSetting(alarmToneUri = alarmToneUri))
     }
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is AlarmToneEvent.OnNavigateBack -> {
-                onGoBack()
+                onGoBack(event.title, event.uri.toString())
             }
         }
     }
@@ -121,7 +121,7 @@ private fun AlarmToneSettingScreen(
                 RingtoneSettingItem(
                     alarmoneItem = AlarmoneItem(title = "Silent", uri = null),
                     isSilent = true,
-                    isSelected = state.currentAlarm?.ringtoneUri == null,
+                    isSelected = state.currentSelectedRingtone?.uri == null,
                     onClickOnRingtone = { selectedRingtone ->
                         onAction(AlarmToneAction.OnSelectAlarmTone(selectedRingtone))
                     }
@@ -130,7 +130,7 @@ private fun AlarmToneSettingScreen(
             items(state.ringtones) { ringtone ->
                 RingtoneSettingItem(
                     alarmoneItem = ringtone,
-                    isSelected = ringtone.title == state.currentAlarm?.ringtoneTitle,
+                    isSelected = ringtone.uri?.toString() == state.currentSelectedRingtone?.uri?.toString(),
                     onClickOnRingtone = { selectedRingtone ->
                         onAction(AlarmToneAction.OnSelectAlarmTone(selectedRingtone))
                     }

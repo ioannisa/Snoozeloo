@@ -32,6 +32,7 @@ sealed interface AlarmEditorScreenAction {
     data class UpdateAlarmVolume(val volume: Float): AlarmEditorScreenAction
     data class UpdateAlarmVibration(val vibrate: Boolean): AlarmEditorScreenAction
     data object ShowDaysValidationError: AlarmEditorScreenAction
+    data class UpdateRingtoneResult(val title: String, val uri: String?) : AlarmEditorScreenAction
 }
 
 sealed interface AlarmEditorScreenEvent {
@@ -175,6 +176,29 @@ class AlarmEditViewModel(
             is AlarmEditorScreenAction.ShowDaysValidationError -> {
                 viewModelScope.launch {
                     eventChannel.send(AlarmEditorScreenEvent.OnShowSnackBar("All alarms need at least one active day"))
+                }
+            }
+
+            is AlarmEditorScreenAction.UpdateRingtoneResult -> {
+
+                println("ABCDEFG_1 -> Getting Ringtone2 ${action.title} ${action.uri}")
+
+
+                _alarmUiState.value?.let { currentState ->
+                    val updatedAlarm = currentState.alarm.copy(
+                        ringtoneTitle = action.title,
+                        ringtoneUri = action.uri
+                    )
+                    repository.updateEditedAlarm(updatedAlarm)
+                }
+
+                _alarmUiState.value = _alarmUiState.value?.alarm?.copy(
+                    ringtoneTitle = action.title,
+                    ringtoneUri = action.uri
+                )?.let {
+                    _alarmUiState.value?.copy(
+                        alarm = it
+                    )
                 }
             }
         }

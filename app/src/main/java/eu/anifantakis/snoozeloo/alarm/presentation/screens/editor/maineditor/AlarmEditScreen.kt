@@ -76,6 +76,11 @@ fun AlarmEditScreenRoot(
         viewModel.loadAlarm(alarmId)
     }
 
+    // Add debugging for state collection
+    LaunchedEffect(alarmUiState) {
+        println("ABCDEFG_DEBUG -> Root collected new state: ${alarmUiState?.alarm?.ringtoneTitle}")
+    }
+
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is AlarmEditorScreenEvent.OnOpenRingtoneSettings -> {
@@ -201,11 +206,17 @@ fun AlarmEditScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         AppText16(stringResource(R.string.alarm_ringtone), fontWeight = FontWeight.W700)
+                        println("ABCDEFG_DEBUG -> About to render ringtone title: ${currentState.alarm.ringtoneTitle}")
+
                         AppText16(
                             if (currentState.alarm.ringtoneTitle.trim() == "") {
-                                stringResource(R.string.default_ringtone_name)
+                                stringResource(R.string.default_ringtone_name).also {
+                                    println("ABCDEFG_DEBUG -> Using default name")
+                                }
                             } else {
-                                currentState.alarm.ringtoneTitle.trim()
+                                currentState.alarm.ringtoneTitle.trim().also {
+                                    println("ABCDEFG_DEBUG -> Using custom name: $it")
+                                }
                             },
                             fontWeight = FontWeight.W400,
                             color = MaterialTheme.colorScheme.outline
