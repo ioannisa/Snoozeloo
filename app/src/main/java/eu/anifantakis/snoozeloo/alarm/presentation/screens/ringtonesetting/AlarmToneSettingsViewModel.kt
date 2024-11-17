@@ -16,52 +16,52 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-sealed interface RingtoneAction {
-    data class OnOpenRingtonesSetting(val alarmId: String) : RingtoneAction
-    data class OnSelectRingtone(val ringtone: RingtoneItem) : RingtoneAction
-    data object NavigateBack : RingtoneAction
+sealed interface AlarmToneAction {
+    data class OnOpenRingtonesSetting(val alarmId: String) : AlarmToneAction
+    data class OnSelectAlarmTone(val ringtone: AlarmoneItem) : AlarmToneAction
+    data object NavigateBack : AlarmToneAction
 }
 
 @Immutable
-data class RingtoneState(
+data class AlarmToneState(
     val currentAlarm: Alarm? = null,
-    val ringtones: List<RingtoneItem> = emptyList(),
+    val ringtones: List<AlarmoneItem> = emptyList(),
     val isLoading: Boolean = false
 )
 
-sealed interface RingtoneEvent {
-    data object OnNavigateBack: RingtoneEvent
+sealed interface AlarmToneEvent {
+    data object OnNavigateBack: AlarmToneEvent
 }
 
-data class RingtoneItem(
+data class AlarmoneItem(
     val title: String = "",
     val uri: Uri? = null,
     val isSelected: Boolean = false
 )
 
-class RingtoneSettingsViewModel(
+class AlarmToneSettingViewModel(
     private val ringtoneRepository: RingtoneRepository,
     private val alarmRepository: AlarmsRepository
 ) : ViewModel() {
 
-    var state by mutableStateOf(RingtoneState())
+    var state by mutableStateOf(AlarmToneState())
         private set
 
-    private val eventChannel = Channel<RingtoneEvent>()
+    private val eventChannel = Channel<AlarmToneEvent>()
     val events = eventChannel.receiveAsFlow()
 
-    fun onAction(action: RingtoneAction) {
+    fun onAction(action: AlarmToneAction) {
         when (action) {
-            is RingtoneAction.OnOpenRingtonesSetting -> {
+            is AlarmToneAction.OnOpenRingtonesSetting -> {
                 loadRingtones(action.alarmId)
             }
-            is RingtoneAction.OnSelectRingtone -> {
+            is AlarmToneAction.OnSelectAlarmTone -> {
                 handleRingtoneSelection(action.ringtone)
             }
-            RingtoneAction.NavigateBack -> {
+            AlarmToneAction.NavigateBack -> {
                 viewModelScope.launch {
                     ringtoneRepository.stopPlaying()
-                    eventChannel.send(RingtoneEvent.OnNavigateBack)
+                    eventChannel.send(AlarmToneEvent.OnNavigateBack)
                 }
             }
         }
@@ -122,8 +122,8 @@ class RingtoneSettingsViewModel(
                     ringtoneRepository.getSystemDefaultAlarmRingtone()
                 } else null
 
-                val ringtoneItems = ringtones.map { (title, uri) ->
-                    RingtoneItem(
+                val alarmoneItems = ringtones.map { (title, uri) ->
+                    AlarmoneItem(
                         title = title,
                         uri = uri,
                         isSelected = if (hasNoRingtoneSelected) {
@@ -150,7 +150,7 @@ class RingtoneSettingsViewModel(
                 }
 
                 state = state.copy(
-                    ringtones = ringtoneItems,
+                    ringtones = alarmoneItems,
                     currentAlarm = updatedAlarm,
                     isLoading = false
                 )
@@ -162,7 +162,7 @@ class RingtoneSettingsViewModel(
         }
     }
 
-    private fun handleRingtoneSelection(selectedRingtone: RingtoneItem) {
+    private fun handleRingtoneSelection(selectedRingtone: AlarmoneItem) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 state.currentAlarm?.let { currentAlarm ->

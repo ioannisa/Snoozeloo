@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -50,7 +50,7 @@ import java.util.Locale
 fun AppAlarmBox(
     alarmUiState: AlarmUiState,
     use24HourFormat: Boolean,
-    onAlarmEvent: (AlarmScreenAction) -> Unit,
+    onAlarmEvent: (AlarmsScreenAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val alarm = alarmUiState.alarm
@@ -98,7 +98,7 @@ fun AppAlarmBox(
                 AppSwitch(
                     checked = alarm.isEnabled,
                     onCheckedChange = { enabled ->
-                        onAlarmEvent(AlarmScreenAction.EnableAlarmScreen(alarm, enabled))
+                        onAlarmEvent(AlarmsScreenAction.EnableAlarmsScreen(alarm, enabled))
                     }
                 )
             }
@@ -112,7 +112,7 @@ fun AppAlarmBox(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                 ) {
-                     onAlarmEvent(AlarmScreenAction.SelectAlarmScreen(alarm))
+                     onAlarmEvent(AlarmsScreenAction.SelectAlarmsScreen(alarm))
                 }
             ) {
                 AppText42(timeText)
@@ -136,10 +136,10 @@ fun AppAlarmBox(
                 modifier = Modifier.fillMaxWidth(),
                 selectedDays = alarm.selectedDays,
                 onError = {
-                    onAlarmEvent(AlarmScreenAction.ShowDaysValidationError)
+                    onAlarmEvent(AlarmsScreenAction.ShowDaysValidationError)
                 },
                 onSelectionChanged = { selectedDays ->
-                    onAlarmEvent(AlarmScreenAction.ChangeAlarmScreenDays(alarm, selectedDays))
+                    onAlarmEvent(AlarmsScreenAction.ChangeAlarmsScreenDays(alarm, selectedDays))
                 }
             )
 
@@ -220,10 +220,10 @@ private fun AppAlarmBoxPreview() {
                     use24HourFormat = false,
                     onAlarmEvent = { event ->
                         when (event) {
-                            is AlarmScreenAction.EnableAlarmScreen -> {
+                            is AlarmsScreenAction.EnableAlarmsScreen -> {
                                 previewAlarm = previewAlarm.copy(isEnabled = event.enabled)
                             }
-                            is AlarmScreenAction.ChangeAlarmScreenDays -> {
+                            is AlarmsScreenAction.ChangeAlarmsScreenDays -> {
                                 previewAlarm = previewAlarm.copy(selectedDays = event.selectedDays)
                             }
                             else -> {}
@@ -237,10 +237,10 @@ private fun AppAlarmBoxPreview() {
                     use24HourFormat = true,
                     onAlarmEvent = { event ->
                         when (event) {
-                            is AlarmScreenAction.EnableAlarmScreen -> {
+                            is AlarmsScreenAction.EnableAlarmsScreen -> {
                                 previewAlarm = previewAlarm.copy(isEnabled = event.enabled)
                             }
-                            is AlarmScreenAction.ChangeAlarmScreenDays -> {
+                            is AlarmsScreenAction.ChangeAlarmsScreenDays -> {
                                 previewAlarm = previewAlarm.copy(selectedDays = event.selectedDays)
                             }
                             else -> {}

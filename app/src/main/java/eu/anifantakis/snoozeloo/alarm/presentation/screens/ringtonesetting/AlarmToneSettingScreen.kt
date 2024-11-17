@@ -39,18 +39,18 @@ import eu.anifantakis.snoozeloo.core.presentation.ui.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun RingtoneSettingScreenRoot(
+fun AlarmToneSettingScreenRoot(
     alarmId: String,
     onGoBack: () -> Unit,
-    viewModel: RingtoneSettingsViewModel = koinViewModel()
+    viewModel: AlarmToneSettingViewModel = koinViewModel()
 ) {
     LaunchedEffect(Unit) {
-        viewModel.onAction(RingtoneAction.OnOpenRingtonesSetting(alarmId = alarmId))
+        viewModel.onAction(AlarmToneAction.OnOpenRingtonesSetting(alarmId = alarmId))
     }
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            is RingtoneEvent.OnNavigateBack -> {
+            is AlarmToneEvent.OnNavigateBack -> {
                 onGoBack()
             }
         }
@@ -71,7 +71,7 @@ fun RingtoneSettingScreenRoot(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Top
         ) {
-            RingtoneSettingScreen(
+            AlarmToneSettingScreen(
                 state = viewModel.state,
                 onAction = viewModel::onAction
             )
@@ -84,9 +84,9 @@ fun RingtoneSettingScreenRoot(
 }
 
 @Composable
-private fun RingtoneSettingScreen(
-    state: RingtoneState,
-    onAction: (RingtoneAction) -> Unit
+private fun AlarmToneSettingScreen(
+    state: AlarmToneState,
+    onAction: (AlarmToneAction) -> Unit
 ) {
     val listState = rememberLazyListState()
 
@@ -109,7 +109,7 @@ private fun RingtoneSettingScreen(
             enabled = true,
             contentPadding = PaddingValues(all = 0.dp),
         ) {
-            onAction(RingtoneAction.NavigateBack)
+            onAction(AlarmToneAction.NavigateBack)
         }
 
         LazyColumn(
@@ -119,20 +119,20 @@ private fun RingtoneSettingScreen(
         ) {
             item {
                 RingtoneSettingItem(
-                    ringtoneItem = RingtoneItem(title = "Silent", uri = null),
+                    alarmoneItem = AlarmoneItem(title = "Silent", uri = null),
                     isSilent = true,
                     isSelected = state.currentAlarm?.ringtoneUri == null,
                     onClickOnRingtone = { selectedRingtone ->
-                        onAction(RingtoneAction.OnSelectRingtone(selectedRingtone))
+                        onAction(AlarmToneAction.OnSelectAlarmTone(selectedRingtone))
                     }
                 )
             }
             items(state.ringtones) { ringtone ->
                 RingtoneSettingItem(
-                    ringtoneItem = ringtone,
+                    alarmoneItem = ringtone,
                     isSelected = ringtone.title == state.currentAlarm?.ringtoneTitle,
                     onClickOnRingtone = { selectedRingtone ->
-                        onAction(RingtoneAction.OnSelectRingtone(selectedRingtone))
+                        onAction(AlarmToneAction.OnSelectAlarmTone(selectedRingtone))
                     }
                 )
             }
@@ -142,17 +142,17 @@ private fun RingtoneSettingScreen(
 
 @Composable
 fun RingtoneSettingItem(
-    ringtoneItem: RingtoneItem,
+    alarmoneItem: AlarmoneItem,
     isSelected: Boolean,
-    onClickOnRingtone: (RingtoneItem) -> Unit,
+    onClickOnRingtone: (AlarmoneItem) -> Unit,
     isSilent: Boolean = false
 ) {
     AppCard(modifier = Modifier
         .padding(vertical = UIConst.paddingExtraSmall)
         .clickable {
-            onClickOnRingtone(ringtoneItem.copy(
-                title = if (isSilent) "Silent" else ringtoneItem.title,
-                uri = if (isSilent) null else ringtoneItem.uri
+            onClickOnRingtone(alarmoneItem.copy(
+                title = if (isSilent) "Silent" else alarmoneItem.title,
+                uri = if (isSilent) null else alarmoneItem.uri
             ))
         }
     ) {
@@ -174,7 +174,7 @@ fun RingtoneSettingItem(
                 )
             }
 
-            AppText14(ringtoneItem.title, modifier = Modifier.weight(1f))
+            AppText14(alarmoneItem.title, modifier = Modifier.weight(1f))
             if (isSelected) {
                 Icon(
                     imageVector = Icons.checked,
@@ -197,7 +197,7 @@ fun RingtoneSettingItem(
 @Composable
 @Preview
 fun RingtoneSettingScreenPreview() {
-    RingtoneSettingScreen(state = RingtoneState()) {
+    AlarmToneSettingScreen(state = AlarmToneState()) {
 
     }
 }

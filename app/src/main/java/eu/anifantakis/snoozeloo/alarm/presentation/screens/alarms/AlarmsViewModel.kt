@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
@@ -28,22 +28,22 @@ data class AlarmsScreenState(
     val use24HourFormat: Boolean = false
 )
 
-sealed interface AlarmScreenAction {
-    data object AddAlarmScreen : AlarmScreenAction
-    data class EnableAlarmScreen(val alarm: Alarm, val enabled: Boolean) : AlarmScreenAction
-    data class ChangeAlarmScreenDays(val alarm: Alarm, val selectedDays: DaysOfWeek) : AlarmScreenAction
-    data class DeleteAlarmScreen(val alarm: Alarm) : AlarmScreenAction
-    data class SelectAlarmScreen(val alarm: Alarm): AlarmScreenAction
-    data class ChangeTimeFormat(val use24HourFormat: Boolean): AlarmScreenAction
-    data object ShowDaysValidationError : AlarmScreenAction
+sealed interface AlarmsScreenAction {
+    data object AddAlarmsScreen : AlarmsScreenAction
+    data class EnableAlarmsScreen(val alarm: Alarm, val enabled: Boolean) : AlarmsScreenAction
+    data class ChangeAlarmsScreenDays(val alarm: Alarm, val selectedDays: DaysOfWeek) : AlarmsScreenAction
+    data class DeleteAlarmsScreen(val alarm: Alarm) : AlarmsScreenAction
+    data class SelectAlarmsScreen(val alarm: Alarm): AlarmsScreenAction
+    data class ChangeTimeFormat(val use24HourFormat: Boolean): AlarmsScreenAction
+    data object ShowDaysValidationError : AlarmsScreenAction
 }
 
-sealed interface AlarmScreenEvent {
-    data class OnSelectAlarm(val alarmId: String): AlarmScreenEvent
-    data class OnShowSnackBar(val message: String): AlarmScreenEvent
+sealed interface AlarmsScreenEvent {
+    data class OnSelectAlarms(val alarmId: String): AlarmsScreenEvent
+    data class OnShowSnackBar(val message: String): AlarmsScreenEvent
 }
 
-class AlarmViewModel(
+class AlarmsViewModel(
     private val repository: AlarmsRepository,
     private val persistManager: PersistManager,
     private val alarmScheduler: AlarmScheduler
@@ -52,7 +52,7 @@ class AlarmViewModel(
     var state by mutableStateOf(AlarmsScreenState())
         private set
 
-    private val eventChannel = Channel<AlarmScreenEvent>()
+    private val eventChannel = Channel<AlarmsScreenEvent>()
     val events = eventChannel.receiveAsFlow()
 
     private var minuteTickerJob: Job? = null
@@ -80,7 +80,7 @@ class AlarmViewModel(
 
                         // If we found the new alarm, select it to open the editor
                         newAlarm?.let {
-                            onAction(AlarmScreenAction.SelectAlarmScreen(it))
+                            onAction(AlarmsScreenAction.SelectAlarmsScreen(it))
                         }
                     }
 
@@ -131,14 +131,14 @@ class AlarmViewModel(
         minuteTickerJob?.cancel()
     }
 
-    fun onAction(action: AlarmScreenAction) {
+    fun onAction(action: AlarmsScreenAction) {
         when (action) {
-            is AlarmScreenAction.AddAlarmScreen -> {
+            is AlarmsScreenAction.AddAlarmsScreen -> {
                 viewModelScope.launch {
                     repository.createNewAlarm()
                 }
             }
-            is AlarmScreenAction.EnableAlarmScreen -> {
+            is AlarmsScreenAction.EnableAlarmsScreen -> {
                 println("SWITCHING")
 
                 viewModelScope.launch(Dispatchers.IO) {
@@ -154,35 +154,35 @@ class AlarmViewModel(
                     }
                 }
             }
-            is AlarmScreenAction.ChangeAlarmScreenDays -> {
+            is AlarmsScreenAction.ChangeAlarmsScreenDays -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     val updatedAlarm = action.alarm.copy(selectedDays = action.selectedDays)
                     repository.upsertAlarm(updatedAlarm)
                 }
             }
-            is AlarmScreenAction.DeleteAlarmScreen -> {
+            is AlarmsScreenAction.DeleteAlarmsScreen -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     alarmScheduler.cancel(action.alarm)
                     repository.deleteAlarm(action.alarm.id)
                 }
             }
 
-            is AlarmScreenAction.ShowDaysValidationError -> {
+            is AlarmsScreenAction.ShowDaysValidationError -> {
                 viewModelScope.launch {
-                    eventChannel.send(AlarmScreenEvent.OnShowSnackBar("All alarms need at least one active day"))
+                    eventChannel.send(AlarmsScreenEvent.OnShowSnackBar("All alarms need at least one active day"))
                 }
             }
 
-            is AlarmScreenAction.SelectAlarmScreen -> {
+            is AlarmsScreenAction.SelectAlarmsScreen -> {
                 viewModelScope.launch {
                     state = state.copy(
                         selectedAlarm = state.alarms.firstOrNull{ it.alarm.id == action.alarm.id }?.alarm
                     )
 
-                    eventChannel.send(AlarmScreenEvent.OnSelectAlarm(action.alarm.id))
+                    eventChannel.send(AlarmsScreenEvent.OnSelectAlarms(action.alarm.id))
                 }
             }
-            is AlarmScreenAction.ChangeTimeFormat -> {
+            is AlarmsScreenAction.ChangeTimeFormat -> {
                 state = state.copy(use24HourFormat = action.use24HourFormat)
                 viewModelScope.launch(Dispatchers.IO) {
                     persistManager.dataStorePrefs.put(

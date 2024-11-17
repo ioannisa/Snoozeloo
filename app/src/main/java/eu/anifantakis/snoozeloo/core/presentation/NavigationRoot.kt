@@ -13,9 +13,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm.AlarmScreenRoot
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms.AlarmsScreenRoot
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarmedit.AlarmEditScreenRoot
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.ringtonesetting.RingtoneSettingScreenRoot
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.ringtonesetting.AlarmToneSettingScreenRoot
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppScreen
 import kotlinx.serialization.Serializable
 
@@ -49,7 +49,7 @@ fun NavigationRoot(
                     )
             ) {
                 composable<NavGraph.Alarms> {
-                    AlarmScreenRoot(onOpenAlarmEditor = { alarmId ->
+                    AlarmsScreenRoot(onOpenAlarmEditor = { alarmId ->
                         println("HERE WE ARE!!")
                         navController.navigate(NavGraph.AlarmEditor(alarmId))
                     })
@@ -73,7 +73,7 @@ fun NavigationRoot(
                 composable<NavGraph.RingtoneSetting> {
                     val args = it.toRoute<NavGraph.RingtoneSetting>()
                     val alarmId = args.alarmId
-                    RingtoneSettingScreenRoot(
+                    AlarmToneSettingScreenRoot(
                         alarmId = alarmId,
                         onGoBack = {
                             navController.popBackStack()

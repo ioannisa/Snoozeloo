@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarm
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -43,22 +43,22 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun AlarmScreenRoot(
+fun AlarmsScreenRoot(
     onOpenAlarmEditor: (alarmId: String) -> Unit,
-    viewModel: AlarmViewModel = koinViewModel()
+    viewModel: AlarmsViewModel = koinViewModel()
 ) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            is AlarmScreenEvent.OnSelectAlarm -> {
+            is AlarmsScreenEvent.OnSelectAlarms -> {
                 if (event.alarmId.trim().isNotEmpty()) {
                     onOpenAlarmEditor(event.alarmId)
                 }
             }
 
-            is AlarmScreenEvent.OnShowSnackBar -> {
+            is AlarmsScreenEvent.OnShowSnackBar -> {
                 scope.launch {
                     snackbarHostState.showSnackbar(
                         message = event.message,
@@ -71,7 +71,7 @@ fun AlarmScreenRoot(
     }
 
     Box {
-        AlarmScreen(
+        AlarmsScreen(
             state = viewModel.state,
             onAction = viewModel::onAction
         )
@@ -84,16 +84,16 @@ fun AlarmScreenRoot(
 }
 
 @Composable
-private fun AlarmScreen(
+private fun AlarmsScreen(
     state: AlarmsScreenState,
-    onAction: (AlarmScreenAction) -> Unit
+    onAction: (AlarmsScreenAction) -> Unit
 ) {
     AppScreenWithFAB(
         onFabClick = {
-            onAction(AlarmScreenAction.AddAlarmScreen)
+            onAction(AlarmsScreenAction.AddAlarmsScreen)
         }
     ) {
-        AlarmListScreen(
+        AlarmsListScreen(
             alarms = state.alarms,
             use24HourFormat = state.use24HourFormat,
             onEvent = onAction
@@ -102,10 +102,10 @@ private fun AlarmScreen(
 }
 
 @Composable
-private fun AlarmListScreen(
+private fun AlarmsListScreen(
     alarms: List<AlarmUiState>,
     use24HourFormat: Boolean,
-    onEvent: (AlarmScreenAction) -> Unit
+    onEvent: (AlarmsScreenAction) -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = UIConst.padding)) {
         Row(
@@ -128,7 +128,7 @@ private fun AlarmListScreen(
                 uncheckedText = stringResource(R.string.clock_12h),
                 checkedText = stringResource(R.string.clock_24h),
                 onCheckedChange = { use24Hour ->
-                    onEvent(AlarmScreenAction.ChangeTimeFormat(use24Hour))
+                    onEvent(AlarmsScreenAction.ChangeTimeFormat(use24Hour))
                 }
             )
         }
@@ -164,7 +164,7 @@ private fun AlarmListScreen(
                 SwipeableAlarmItem(
                     alarmUiState = alarmUiState,
                     use24HourFormat = use24HourFormat,
-                    onDelete = { onEvent(AlarmScreenAction.DeleteAlarmScreen(alarmUiState.alarm)) },
+                    onDelete = { onEvent(AlarmsScreenAction.DeleteAlarmsScreen(alarmUiState.alarm)) },
                     onAlarmEvent = onEvent,
                     modifier = Modifier.padding(vertical = UIConst.paddingSmall)
                 )
@@ -178,7 +178,7 @@ private fun SwipeableAlarmItem(
     alarmUiState: AlarmUiState,
     use24HourFormat: Boolean,
     onDelete: () -> Unit,
-    onAlarmEvent: (AlarmScreenAction) -> Unit,
+    onAlarmEvent: (AlarmsScreenAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
@@ -227,7 +227,7 @@ private fun SwipeableAlarmItem(
 @Preview(uiMode = UI_MODE_NIGHT_YES)
 @Composable
 private fun AlarmScreenPreview() {
-    AlarmScreen(
+    AlarmsScreen(
         state = AlarmsScreenState(
             alarms = emptyList(),
             use24HourFormat = false

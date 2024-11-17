@@ -34,7 +34,7 @@ data class AlarmState(
     val alarmId: String? = null
 )
 
-class AlarmDismissViewModel(
+class AlarmDismissActivityViewModel(
     application: Application,
     private val onFinish: () -> Unit  // Called when alarm is dismissed to close the screen
 ) : AndroidViewModel(application) {

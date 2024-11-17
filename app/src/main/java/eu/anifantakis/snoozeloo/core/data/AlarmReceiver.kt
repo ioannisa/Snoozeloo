@@ -11,7 +11,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import eu.anifantakis.snoozeloo.AlarmActivity
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmDismissActivity
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import timber.log.Timber
@@ -37,7 +37,7 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     private fun startAlarmActivity(context: Context, intent: Intent) {
-        val fullScreenIntent = Intent(context, AlarmActivity::class.java).apply {
+        val fullScreenIntent = Intent(context, AlarmDismissActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -114,7 +114,7 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     private fun createFullScreenPendingIntent(context: Context, intent: Intent): PendingIntent {
-        val fullScreenIntent = Intent(context, AlarmActivity::class.java).apply {
+        val fullScreenIntent = Intent(context, AlarmDismissActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtras(intent)
@@ -134,7 +134,7 @@ class AlarmReceiver : BroadcastReceiver() {
         action: String,
         requestCode: Int
     ): PendingIntent {
-        val actionIntent = Intent(context, AlarmActivity::class.java).apply {
+        val actionIntent = Intent(context, AlarmDismissActivity::class.java).apply {
             this.action = action
             putExtras(intent)
         }

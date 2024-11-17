@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo
+package eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss
 
 import android.app.KeyguardManager
 import android.content.Context
@@ -13,8 +13,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmDismissScreen
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmDismissViewModel
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -22,14 +20,14 @@ import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
 // Activity that shows when alarm is triggered
-class AlarmActivity : ComponentActivity() {
+class AlarmDismissActivity : ComponentActivity() {
     companion object {
         private const val TAG = "AlarmActivity"
         private const val DEFAULT_VOLUME = 0.5f
     }
 
     // ViewModel with finish callback for closing the activity
-    private val viewModel: AlarmDismissViewModel by viewModel() {
+    private val viewModel: AlarmDismissActivityViewModel by viewModel() {
         parametersOf(this::finish)
     }
 

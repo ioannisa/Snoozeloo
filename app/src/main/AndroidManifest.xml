@@ -33,7 +33,7 @@
         </activity>
 
         <activity
-            android:name=".AlarmActivity"
+            android:name=".alarm.presentation.screens.dismiss.AlarmDismissActivity"
             android:exported="true"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
