@@ -63,7 +63,6 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AlarmEditScreenRoot(
-    alarmId: String,
     viewModel: AlarmEditViewModel = koinViewModel(),
     onOpenRingtoneSetting: () -> Unit,
     onClose: () -> Unit
@@ -71,15 +70,6 @@ fun AlarmEditScreenRoot(
     val alarmUiState by viewModel.alarmUiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
-    LaunchedEffect(alarmId) {
-        viewModel.loadAlarm(alarmId)
-    }
-
-    // Add debugging for state collection
-    LaunchedEffect(alarmUiState) {
-        println("ABCDEFG_DEBUG -> Root collected new state: ${alarmUiState?.alarm?.ringtoneTitle}")
-    }
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
@@ -206,17 +196,12 @@ fun AlarmEditScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         AppText16(stringResource(R.string.alarm_ringtone), fontWeight = FontWeight.W700)
-                        println("ABCDEFG_DEBUG -> About to render ringtone title: ${currentState.alarm.ringtoneTitle}")
 
                         AppText16(
                             if (currentState.alarm.ringtoneTitle.trim() == "") {
-                                stringResource(R.string.default_ringtone_name).also {
-                                    println("ABCDEFG_DEBUG -> Using default name")
-                                }
+                                stringResource(R.string.default_ringtone_name)
                             } else {
-                                currentState.alarm.ringtoneTitle.trim().also {
-                                    println("ABCDEFG_DEBUG -> Using custom name: $it")
-                                }
+                                currentState.alarm.ringtoneTitle.trim()
                             },
                             fontWeight = FontWeight.W400,
                             color = MaterialTheme.colorScheme.outline

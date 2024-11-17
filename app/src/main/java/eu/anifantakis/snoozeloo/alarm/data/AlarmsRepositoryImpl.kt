@@ -10,27 +10,19 @@ import eu.anifantakis.snoozeloo.core.domain.util.DataResult
 import eu.anifantakis.snoozeloo.core.domain.util.EmptyDataResult
 import eu.anifantakis.snoozeloo.core.domain.util.asEmptyDataResult
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
 class AlarmsRepositoryImpl(
     private val localDataSource: LocalAlarmsDataSource
 ) : AlarmsRepository {
 
-    private val currentEditedAlarm = MutableStateFlow<Alarm?>(null)
-
     override fun getAlarms(): Flow<List<Alarm>> {
         return localDataSource.getAlarms()
     }
 
     override suspend fun getAlarm(id: AlarmId): Alarm {
-        return localDataSource.getAlarm(id = id).also {
-            currentEditedAlarm.value = it
-        }
+        return localDataSource.getAlarm(id = id)
     }
-
-    override fun observeEditedAlarm(): Flow<Alarm?> = currentEditedAlarm.asStateFlow()
 
     override suspend fun upsertAlarm(alarm: Alarm): EmptyDataResult<DataError> {
         val localResult = localDataSource.upsertAlarm(alarm)
@@ -41,17 +33,7 @@ class AlarmsRepositoryImpl(
     }
 
     override suspend fun createNewAlarm(): EmptyDataResult<DataError> {
-        val emptyAlarm = generateNewAlarm()
-
-        val localResult = localDataSource.upsertAlarm(emptyAlarm)
-        if (localResult !is DataResult.Success) {
-            return localResult.asEmptyDataResult()
-        }
-        return localResult.asEmptyDataResult()
-    }
-
-    override fun generateNewAlarm(): Alarm {
-        return Alarm(
+        val emptyAlarm = Alarm(
             id = UUID.randomUUID().toString(),
             hour = 0,
             minute = 0,
@@ -72,26 +54,15 @@ class AlarmsRepositoryImpl(
                 su = true
             )
         )
+
+        val localResult = localDataSource.upsertAlarm(emptyAlarm)
+        if (localResult !is DataResult.Success) {
+            return localResult.asEmptyDataResult()
+        }
+        return localResult.asEmptyDataResult()
     }
 
     override suspend fun deleteAlarm(id: AlarmId) {
-        if (currentEditedAlarm.value?.id == id) {
-            currentEditedAlarm.value = null
-        }
         localDataSource.deleteAlarm(id)
-    }
-
-    override fun updateEditedAlarm(alarm: Alarm) {
-        currentEditedAlarm.value = alarm
-    }
-
-    override fun cleanupCurrentlyEditedAlarm() {
-        currentEditedAlarm.value = null
-    }
-
-    override suspend fun saveEditedAlarm(): EmptyDataResult<DataError> {
-        return currentEditedAlarm.value?.let { alarm ->
-            upsertAlarm(alarm)
-        } ?: DataResult.Failure(DataError.Local.DISK_FULL)
     }
 }

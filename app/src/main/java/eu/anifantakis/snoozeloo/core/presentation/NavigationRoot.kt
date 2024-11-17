@@ -26,6 +26,7 @@ import eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.maineditor.Ala
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppScreen
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 sealed interface NavGraph {
     @Serializable data object Alarms: NavGraph
@@ -68,7 +69,7 @@ fun NavigationRoot(
                 composable<NavGraph.AlarmEditor> {
                     val args = it.toRoute<NavGraph.AlarmEditor>()
                     val alarmId = args.alarmId
-                    val viewModel: AlarmEditViewModel = koinViewModel()
+                    val viewModel: AlarmEditViewModel = koinViewModel(parameters = { parametersOf(alarmId) })
 
                     // Pass the result to AlarmEditScreen when returning from RingtoneSetting
                     ringtoneSelectionResult?.let { (title, uri) ->
@@ -81,7 +82,6 @@ fun NavigationRoot(
                     }
 
                     AlarmEditScreenRoot(
-                        alarmId = alarmId,
                         viewModel = viewModel,
                         onOpenRingtoneSetting = {
                             navController.navigate(NavGraph.RingtoneSetting(viewModel.alarmUiState.value?.alarm?.ringtoneUri))

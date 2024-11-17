@@ -139,8 +139,6 @@ class AlarmsViewModel(
                 }
             }
             is AlarmsScreenAction.EnableAlarmsScreen -> {
-                println("SWITCHING")
-
                 viewModelScope.launch(Dispatchers.IO) {
                     val updatedAlarm = action.alarm.copy(isEnabled = action.enabled)
                     repository.upsertAlarm(updatedAlarm)

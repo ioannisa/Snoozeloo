@@ -13,6 +13,7 @@ import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,7 @@ sealed interface AlarmEditorScreenEvent {
 }
 
 class AlarmEditViewModel(
+    alarmId: String,
     private val repository: AlarmsRepository,
     private val alarmScheduler: AlarmScheduler
 ): ViewModel() {
@@ -54,40 +56,53 @@ class AlarmEditViewModel(
 
     private var minuteTickerJob: Job? = null
     private var alarmObserverJob: Job? = null
+
     private var originalAlarm: Alarm? = null
 
     init {
+        loadAlarm(alarmId)
         startMinuteTicker()
-        observeAlarm()
     }
 
-    private fun observeAlarm() {
-        alarmObserverJob?.cancel()
-        alarmObserverJob = viewModelScope.launch {
-            repository.observeEditedAlarm().collect { alarm ->
-                alarm?.let {
-                    val hasChanges = originalAlarm != null && originalAlarm != it
-                    _alarmUiState.value = AlarmUiState(
-                        alarm = it,
-                        timeUntilNextAlarm = calculateTimeUntilNextAlarm(
-                            it.hour,
-                            it.minute,
-                            it.selectedDays
-                        ).formatTimeUntil(),
-                        hasChanges = hasChanges
-                    )
-                }
+    private fun updateStateAndCheckChanges(update: (AlarmUiState) -> AlarmUiState) {
+        _alarmUiState.update { currentState ->
+            currentState?.let { state ->
+                val updatedState = update(state)
+                // Compare the updated alarm with original alarm and set hasChanges accordingly
+                val finalState = updatedState.copy(
+                    timeUntilNextAlarm = calculateTimeUntilNextAlarm(
+                        updatedState.alarm.hour,
+                        updatedState.alarm.minute,
+                        updatedState.alarm.selectedDays
+                    ).formatTimeUntil(),
+                    hasChanges = originalAlarm?.let { original ->
+                        original != updatedState.alarm || updatedState.alarm.temporary
+                    } ?: false
+                )
+                finalState
             }
         }
     }
 
     fun onAction(action: AlarmEditorScreenAction) {
+
         when (action) {
             is AlarmEditorScreenAction.UpdateAlarmDays -> {
-                updateAlarmDays(action.days)
+                updateStateAndCheckChanges { state ->
+                    state.copy(alarm = state.alarm.copy(
+                        selectedDays = action.days
+                    ))
+                }
             }
             is AlarmEditorScreenAction.UpdateAlarmTime -> {
-                updateAlarmTime(action.hour, action.minute)
+                updateStateAndCheckChanges { state ->
+                    state.copy(
+                        alarm = state.alarm.copy(
+                            hour = action.hour,
+                            minute = action.minute,
+                        )
+                    )
+                }
             }
             is AlarmEditorScreenAction.OpenRingtoneSettings -> {
                 viewModelScope.launch {
@@ -95,66 +110,70 @@ class AlarmEditViewModel(
                 }
             }
             is AlarmEditorScreenAction.UpdateAlarmTitle -> {
-                _alarmUiState.value?.let { currentState ->
-                    val updatedAlarm = currentState.alarm.copy(
+                updateStateAndCheckChanges { state ->
+                    state.copy(alarm = state.alarm.copy(
                         title = action.title.trim()
-                    )
-                    repository.updateEditedAlarm(updatedAlarm)
+                    ))
                 }
             }
-
             is AlarmEditorScreenAction.UpdateAlarmVolume -> {
-                _alarmUiState.value?.let { currentState ->
-                    val updatedAlarm = currentState.alarm.copy(
+                updateStateAndCheckChanges { state ->
+                    state.copy(alarm = state.alarm.copy(
                         volume = action.volume
-                    )
-                    repository.updateEditedAlarm(updatedAlarm)
+                    ))
                 }
             }
-
             is AlarmEditorScreenAction.UpdateAlarmVibration -> {
-                _alarmUiState.value?.let { currentState ->
-                    val updatedAlarm = currentState.alarm.copy(
+                updateStateAndCheckChanges { state ->
+                    state.copy(alarm = state.alarm.copy(
                         vibrate = action.vibrate
-                    )
-                    repository.updateEditedAlarm(updatedAlarm)
+                    ))
                 }
             }
-
             is AlarmEditorScreenAction.SaveAlarm -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    _alarmUiState.value?.let { currentState ->
+                        // Handle temporary alarm
+                        val updatedAlarm = if (currentState.alarm.temporary) {
+                            currentState.alarm.copy(
+                                temporary = false,
+                                isEnabled = true
+                            )
+                        } else {
+                            currentState.alarm
+                        }
 
-                // saving a new alarm has some these extra steps
-                _alarmUiState.value?.let { currentState ->
-                    if (currentState.alarm.temporary) {
-                        val updatedAlarm = currentState.alarm.copy(
-                            temporary = false,
-                            isEnabled = true
-                        )
-                        repository.updateEditedAlarm(updatedAlarm)
-                        alarmScheduler.schedule(updatedAlarm)
+                        // Schedule if not temporary
+                        if (!updatedAlarm.temporary) {
+                            alarmScheduler.schedule(updatedAlarm)
+                        }
+
+                        // Save alarm
+                        repository.upsertAlarm(updatedAlarm)
+
+                        // Update original alarm to reset change detection
+                        originalAlarm = updatedAlarm
+                        _alarmUiState.update { it?.copy(
+                            alarm = updatedAlarm,
+                            hasChanges = false
+                        )}
+
+                        eventChannel.send(AlarmEditorScreenEvent.OnClose)
                     }
                 }
-
-                // common steps for new and older alarms
-                viewModelScope.launch(Dispatchers.IO) {
-                    repository.saveEditedAlarm()
-                    // After saving, update the original alarm to reset change detection
-                    _alarmUiState.value  = _alarmUiState.value?.copy(hasChanges = false)
-                    originalAlarm = _alarmUiState.value?.alarm
-                    eventChannel.send(AlarmEditorScreenEvent.OnClose)
-                }
             }
-
             is AlarmEditorScreenAction.CancelChanges -> {
                 originalAlarm?.let { originalAlarm ->
                     val hadTimeChanges = alarmUiState.value?.alarm?.let { currentAlarm ->
                         currentAlarm.hour != originalAlarm.hour || currentAlarm.minute != originalAlarm.minute
                     } ?: false
 
-                    _alarmUiState.value = _alarmUiState.value?.copy(
-                        hasChanges = false,
-                        alarm = originalAlarm
-                    )
+                    _alarmUiState.update { state ->
+                        state?.copy(
+                            alarm = originalAlarm,
+                            hasChanges = false
+                        )
+                    }
 
                     viewModelScope.launch(Dispatchers.IO) {
                         _alarmUiState.value?.let { currentState ->
@@ -162,9 +181,7 @@ class AlarmEditViewModel(
                                 repository.deleteAlarm(currentState.alarm.id)
                             }
                         }
-                    }
 
-                    viewModelScope.launch {
                         if (hadTimeChanges) {
                             delay(400L)
                         }
@@ -172,33 +189,20 @@ class AlarmEditViewModel(
                     }
                 }
             }
-
             is AlarmEditorScreenAction.ShowDaysValidationError -> {
                 viewModelScope.launch {
                     eventChannel.send(AlarmEditorScreenEvent.OnShowSnackBar("All alarms need at least one active day"))
                 }
             }
-
             is AlarmEditorScreenAction.UpdateRingtoneResult -> {
-
-                println("ABCDEFG_1 -> Getting Ringtone2 ${action.title} ${action.uri}")
-
-
-                _alarmUiState.value?.let { currentState ->
-                    val updatedAlarm = currentState.alarm.copy(
-                        ringtoneTitle = action.title,
-                        ringtoneUri = action.uri
+                updateStateAndCheckChanges { state ->
+                    val updatedState = state.copy(
+                        alarm = state.alarm.copy(
+                            ringtoneTitle = action.title,
+                            ringtoneUri = action.uri
+                        )
                     )
-                    repository.updateEditedAlarm(updatedAlarm)
-                }
-
-                _alarmUiState.value = _alarmUiState.value?.alarm?.copy(
-                    ringtoneTitle = action.title,
-                    ringtoneUri = action.uri
-                )?.let {
-                    _alarmUiState.value?.copy(
-                        alarm = it
-                    )
+                    updatedState
                 }
             }
         }
@@ -224,11 +228,28 @@ class AlarmEditViewModel(
         }
     }
 
+    private var loaded = false
+
     fun loadAlarm(id: AlarmId) {
+        if (loaded) return
+
+        loaded = true
         viewModelScope.launch {
             try {
-                val alarm = repository.getAlarm(id)
-                originalAlarm = alarm // Store original state
+                val alarmDeferred = async { repository.getAlarm(id) }
+                val loadedAlarm = alarmDeferred.await()
+                originalAlarm = loadedAlarm
+
+                val fetchedAlarm = loadedAlarm.copy()
+                _alarmUiState.value = AlarmUiState(
+                    alarm = fetchedAlarm,
+                    timeUntilNextAlarm = calculateTimeUntilNextAlarm(
+                        fetchedAlarm.hour,
+                        fetchedAlarm.minute,
+                        fetchedAlarm.selectedDays
+                    ).formatTimeUntil(),
+                    hasChanges = fetchedAlarm.temporary
+                )
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 e.printStackTrace()
@@ -236,30 +257,9 @@ class AlarmEditViewModel(
         }
     }
 
-    private fun updateAlarmTime(hour: Int, minute: Int) {
-        _alarmUiState.value?.let { currentState ->
-            val updatedAlarm = currentState.alarm.copy(
-                hour = hour,
-                minute = minute
-            )
-            repository.updateEditedAlarm(updatedAlarm)
-        }
-    }
-
-    private fun updateAlarmDays(days: DaysOfWeek) {
-        _alarmUiState.value?.let { currentState ->
-            val updatedAlarm = currentState.alarm.copy(selectedDays = days)
-            repository.updateEditedAlarm(updatedAlarm)
-        }
-    }
-
     override fun onCleared() {
         super.onCleared()
         minuteTickerJob?.cancel()
         alarmObserverJob?.cancel()
-
-        originalAlarm?.let {
-            repository.cleanupCurrentlyEditedAlarm()
-        }
     }
 }
