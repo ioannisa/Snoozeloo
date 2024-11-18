@@ -73,6 +73,7 @@ fun NavigationRoot(
                 }
 
                 composable<NavGraph.AlarmEditor>(
+                    // with NavTypeParcelableHelperLibrary this is the only line required to pass a parcelable
                     typeMap = mapOf(typeOf<Alarm>() to NavType.mapper<Alarm>())
                 ) {
                     val alarm = it.toRoute<NavGraph.AlarmEditor>().alarm

@@ -104,12 +104,18 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
-    // Secure Android Persist
-    implementation(libs.secure.persist)
-    implementation(libs.secure.persist.compose)
+    // [ IOANNIS ANIFANTAKIS LIBRARIES ----->]
+            // Secure Android Persist
+            // https://github.com/ioannisa/secured-android-persist
+            // using it to persist clock display type (12h/24h) with just a line of code
+            implementation(libs.secure.persist)
+            implementation(libs.secure.persist.compose)
 
-    // NavType Parcelable Helper Library for Navigation Component
-    implementation(libs.navtypeparcelablehelperlibrary)
+            // NavType Parcelable Helper Library for Navigation Component
+            // https://github.com/ioannisa/NavTypeParcelableHelperLibrary
+            // using it to pass entire Alarm object to the editor screen with just a line of code
+            implementation(libs.navtypeparcelablehelperlibrary)
+    // [ <----- IOANNIS ANIFANTAKIS LIBRARIES ]
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

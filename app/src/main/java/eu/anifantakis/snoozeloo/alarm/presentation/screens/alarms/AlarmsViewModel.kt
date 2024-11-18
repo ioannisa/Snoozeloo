@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.anifantakis.lib.securepersist.PersistManager
+import eu.anifantakis.lib.securepersist.compose.mutableStateOf
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.AlarmsRepository
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
@@ -45,12 +46,19 @@ sealed interface AlarmsScreenEvent {
 
 class AlarmsViewModel(
     private val repository: AlarmsRepository,
-    private val persistManager: PersistManager,
-    private val alarmScheduler: AlarmScheduler
+    private val alarmScheduler: AlarmScheduler,
+    persistManager: PersistManager,
 ): ViewModel() {
 
     var state by mutableStateOf(AlarmsScreenState())
         private set
+
+    // we could use a state, but this is not necessary in our case because we want in MVI all states in a single source
+//    var use24HourFormat by persistManager.dataStorePrefs.mutableStateOf(false)
+//        private set
+
+    // so we can use the non-statetfull approach
+    private var use24HourFormat by persistManager.dataStorePrefs.preference( false)
 
     private val eventChannel = Channel<AlarmsScreenEvent>()
     val events = eventChannel.receiveAsFlow()
@@ -64,7 +72,7 @@ class AlarmsViewModel(
 
     private fun loadAlarms() {
         viewModelScope.launch {
-            state = state.copy(use24HourFormat = persistManager.dataStorePrefs.get(key = "use24HourFormat", defaultValue = false, encrypted = false))
+            state = state.copy(use24HourFormat = use24HourFormat)
 
             repository.getAlarms()
                 .collect { alarms ->
@@ -165,11 +173,9 @@ class AlarmsViewModel(
             is AlarmsScreenAction.ChangeTimeFormat -> {
                 state = state.copy(use24HourFormat = action.use24HourFormat)
                 viewModelScope.launch(Dispatchers.IO) {
-                    persistManager.dataStorePrefs.put(
-                        key = "use24HourFormat",
-                        value =  action.use24HourFormat,
-                        encrypted = false
-                    )
+                    // update DataStore preferences with encrypted value with just a single line
+                    // the key (if not specified) for the preference is the property name.
+                    use24HourFormat = action.use24HourFormat
                 }
             }
         }
