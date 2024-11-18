@@ -26,6 +26,7 @@ class AlarmSchedulerImpl(
         if (nextAlarmTime == Duration.ZERO) return
 
         val intent = Intent(context, AlarmReceiver::class.java).apply {
+            putExtra("ALARM_ID", item.id)
             putExtra("TITLE", item.title)
             putExtra("VOLUME", item.volume)
             putExtra("VIBRATE", item.vibrate)

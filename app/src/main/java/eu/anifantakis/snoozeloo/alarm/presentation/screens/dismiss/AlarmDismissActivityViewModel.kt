@@ -14,6 +14,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.Settings
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import eu.anifantakis.snoozeloo.core.data.AlarmReceiver
@@ -24,7 +25,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-// Holds the current state of the alarm
+/**
+ * Data class representing the current state of an active alarm
+ */
+@Immutable
 data class AlarmState(
     val isPlaying: Boolean = false,
     val title: String = "",
@@ -34,9 +38,16 @@ data class AlarmState(
     val alarmId: String? = null
 )
 
+/**
+ * ViewModel for the alarm dismissal screen
+ * Handles alarm playback, vibration, snoozing, and dismissal
+ *
+ * @param application Application context needed for system services
+ * @param onFinish Callback to close the screen when alarm is dismissed
+ */
 class AlarmDismissActivityViewModel(
     application: Application,
-    private val onFinish: () -> Unit  // Called when alarm is dismissed to close the screen
+    private val onFinish: () -> Unit
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -45,14 +56,17 @@ class AlarmDismissActivityViewModel(
         private const val NOTIFICATION_ID = 1
     }
 
+    // UI state management
     private val _state = MutableStateFlow(AlarmState())
     val state: StateFlow<AlarmState> = _state.asStateFlow()
 
-    // Media components that need to be cleaned up
+    // Media components that need lifecycle management
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
 
-    // Getters for Android system services
+    /**
+     * Lazy getters for Android system services to ensure they're only retrieved when needed
+     */
     private val context: Context
         get() = getApplication()
 
@@ -62,6 +76,10 @@ class AlarmDismissActivityViewModel(
     private val notificationManager: NotificationManager
         get() = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+    /**
+     * Gets the appropriate vibrator service based on Android version
+     * Handles the API level differences in vibrator service acquisition
+     */
     private val vibratorService: Vibrator
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager =
@@ -72,7 +90,9 @@ class AlarmDismissActivityViewModel(
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
 
-    // Updates alarm data when received from intent
+    /**
+     * Updates the alarm state with data received from the launching intent
+     */
     fun updateAlarmData(
         title: String,
         volume: Float,
@@ -91,7 +111,10 @@ class AlarmDismissActivityViewModel(
         }
     }
 
-    // Starts playing the alarm sound and vibration
+    /**
+     * Initiates alarm playback and vibration if enabled
+     * Runs in coroutine scope to handle potential long-running operations
+     */
     fun startAlarm() {
         viewModelScope.launch {
             try {
@@ -107,9 +130,13 @@ class AlarmDismissActivityViewModel(
         }
     }
 
-    // Sets up and starts playing the alarm sound
+    /**
+     * Configures and starts the MediaPlayer for alarm sound
+     * Sets up audio attributes, data source, and playback parameters
+     */
     private fun startAlarmSound() {
         mediaPlayer = MediaPlayer().apply {
+            // Configure for alarm audio stream
             setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
@@ -117,6 +144,7 @@ class AlarmDismissActivityViewModel(
                     .build()
             )
 
+            // Set ringtone source, falling back to system default if none specified
             setDataSource(
                 context,
                 if (!state.value.ringtoneUri.isNullOrEmpty()) {
@@ -126,6 +154,7 @@ class AlarmDismissActivityViewModel(
                 }
             )
 
+            // Configure playback settings
             isLooping = true
             setVolume(state.value.volume, state.value.volume)
             prepare()
@@ -133,21 +162,21 @@ class AlarmDismissActivityViewModel(
         }
     }
 
-    // Starts vibration with a pattern
+    /**
+     * Starts device vibration with a specific pattern
+     * Handles different Android API levels for vibration implementation
+     */
     private fun startVibration() {
         vibrator = vibratorService
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
-                // Vibration pattern: wait, vibrate, pause, vibrate, pause, vibrate
+                // Vibration pattern: [wait, vibrate, pause, vibrate, pause, vibrate]
                 val timings = longArrayOf(0, 500, 200, 500, 200, 500)
                 val amplitudes = intArrayOf(
-                    0,
-                    VibrationEffect.DEFAULT_AMPLITUDE,
-                    0,
-                    VibrationEffect.DEFAULT_AMPLITUDE,
-                    0,
-                    VibrationEffect.DEFAULT_AMPLITUDE
+                    0, VibrationEffect.DEFAULT_AMPLITUDE,
+                    0, VibrationEffect.DEFAULT_AMPLITUDE,
+                    0, VibrationEffect.DEFAULT_AMPLITUDE
                 )
                 val vibrationEffect = VibrationEffect.createWaveform(timings, amplitudes, 0)
 
@@ -166,23 +195,40 @@ class AlarmDismissActivityViewModel(
         }
     }
 
-    // Called when user hits snooze button
+    /**
+     * Handles snooze button press
+     * Schedules a new alarm and dismisses the current one
+     */
     fun snoozeAlarm() {
+
+        println("Snoozing alarm 1")
         if (state.value.alarmId != null) {
+            println("Snoozing alarm 2")
             scheduleSnoozeAlarm()
         }
         dismissAlarm()
     }
 
-    // Schedules a new alarm for 5 minutes later
+    /**
+     * Schedules a new alarm for 5 minutes later
+     * Creates a PendingIntent with the current alarm's parameters
+     */
     private fun scheduleSnoozeAlarm() {
+        println("Snoozing alarm 3")
+
+        val title = if (state.value.title.contains("(Snoozed)"))
+            state.value.title
+        else
+            "${state.value.title} (Snoozed)"
+
         val snoozeIntent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("ALARM_ID", state.value.alarmId)
-            putExtra("TITLE", "${state.value.title} (Snoozed)")
+            putExtra("TITLE", title)
             putExtra("VOLUME", state.value.volume)
             putExtra("VIBRATE", state.value.shouldVibrate)
             putExtra("ALARM_URI", state.value.ringtoneUri)
         }
+        println("Snoozing alarm 4")
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -191,9 +237,14 @@ class AlarmDismissActivityViewModel(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        println("Snoozing alarm 5")
+
         val triggerTime = System.currentTimeMillis() +
                 (DEFAULT_SNOOZE_DURATION_MINUTES * 60 * 1000)
 
+        println("Snoozing alarm 6  at $triggerTime")
+
+        // Schedule alarm using appropriate API based on Android version
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setAlarmClock(
                 AlarmManager.AlarmClockInfo(triggerTime, pendingIntent),
@@ -206,13 +257,20 @@ class AlarmDismissActivityViewModel(
                 pendingIntent
             )
         }
+
+        println("Snoozing alarm 7")
     }
 
-    // Stops alarm sound, vibration, and closes the screen
+    /**
+     * Stops all alarm components and cleans up resources
+     * Called when alarm is dismissed or snoozed
+     */
     fun dismissAlarm() {
+        println("Snoozing alarm 8")
         viewModelScope.launch {
             Timber.tag(TAG).d("Dismissing alarm")
 
+            // Stop and release MediaPlayer
             mediaPlayer?.apply {
                 try {
                     if (isPlaying) stop()
@@ -223,18 +281,23 @@ class AlarmDismissActivityViewModel(
             }
             mediaPlayer = null
 
+            // Stop vibration
             vibrator?.cancel()
             vibrator = null
 
+            // Remove notification
             notificationManager.cancel(NOTIFICATION_ID)
 
+            // Update state and close screen
             _state.update { it.copy(isPlaying = false) }
-
             onFinish()
         }
     }
 
-    // Clean up resources when ViewModel is destroyed
+    /**
+     * Cleanup when ViewModel is destroyed
+     * Ensures all resources are properly released
+     */
     override fun onCleared() {
         super.onCleared()
         dismissAlarm()
