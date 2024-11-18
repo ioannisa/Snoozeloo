@@ -2,7 +2,13 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.com.google.devtools.ksp)
+
+    // add kotlin serialization
     alias(libs.plugins.jetbrains.kotlin.serialization)
+
+    // support for Parcelable
+    alias(libs.plugins.kotlin.parcelize)
+
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -101,6 +107,9 @@ dependencies {
     // Secure Android Persist
     implementation(libs.secure.persist)
     implementation(libs.secure.persist.compose)
+
+    // NavType Parcelable Helper Library for Navigation Component
+    implementation(libs.navtypeparcelablehelperlibrary)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

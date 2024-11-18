@@ -128,7 +128,7 @@ fun AlarmEditScreen(
                 .padding(horizontal = 16.dp)
         ) {
             TopButtons(
-                hasChanges = alarmUiState?.hasChanges ?: false || alarmUiState?.alarm?.temporary ?: false,
+                hasChanges = alarmUiState?.hasChanges ?: false || alarmUiState?.alarm?.isNewAlarm ?: false,
                 onSave = { onAction(AlarmEditorScreenAction.SaveAlarm) },
                 onCancel = {
                     onAction(AlarmEditorScreenAction.CancelChanges)

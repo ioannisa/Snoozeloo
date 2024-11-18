@@ -15,9 +15,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import eu.anifantakis.navhelper.navtype.mapper
+import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms.AlarmsScreenRoot
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.alarmtonesetting.AlarmToneSettingScreenRoot
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.maineditor.AlarmEditScreenRoot
@@ -27,10 +30,11 @@ import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppScr
 import kotlinx.serialization.Serializable
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+import kotlin.reflect.typeOf
 
 sealed interface NavGraph {
     @Serializable data object Alarms: NavGraph
-    @Serializable data class AlarmEditor(val alarmId: String): NavGraph
+    @Serializable data class AlarmEditor(val alarm: Alarm): NavGraph
     @Serializable data class RingtoneSetting(val alarmToneUri: String?): NavGraph
 }
 
@@ -60,16 +64,19 @@ fun NavigationRoot(
                         )
                     )
             ) {
-                composable<NavGraph.Alarms> {
-                    AlarmsScreenRoot(onOpenAlarmEditor = { alarmId ->
-                        navController.navigate(NavGraph.AlarmEditor(alarmId))
+                composable<NavGraph.Alarms>(
+                    typeMap = mapOf(typeOf<Alarm>() to NavType.mapper<Alarm>())
+                ) {
+                    AlarmsScreenRoot(onOpenAlarmEditor = { alarm ->
+                        navController.navigate(NavGraph.AlarmEditor(alarm))
                     })
                 }
 
-                composable<NavGraph.AlarmEditor> {
-                    val args = it.toRoute<NavGraph.AlarmEditor>()
-                    val alarmId = args.alarmId
-                    val viewModel: AlarmEditViewModel = koinViewModel(parameters = { parametersOf(alarmId) })
+                composable<NavGraph.AlarmEditor>(
+                    typeMap = mapOf(typeOf<Alarm>() to NavType.mapper<Alarm>())
+                ) {
+                    val alarm = it.toRoute<NavGraph.AlarmEditor>().alarm
+                    val viewModel: AlarmEditViewModel = koinViewModel(parameters = { parametersOf(alarm) })
 
                     // Pass the result to AlarmEditScreen when returning from RingtoneSetting
                     ringtoneSelectionResult?.let { (title, uri) ->
@@ -84,7 +91,7 @@ fun NavigationRoot(
                     AlarmEditScreenRoot(
                         viewModel = viewModel,
                         onOpenRingtoneSetting = {
-                            navController.navigate(NavGraph.RingtoneSetting(viewModel.alarmUiState.value?.alarm?.ringtoneUri))
+                            navController.navigate(NavGraph.RingtoneSetting(alarm.ringtoneUri))
                         },
                         onClose = {
                             navController.popBackStack()

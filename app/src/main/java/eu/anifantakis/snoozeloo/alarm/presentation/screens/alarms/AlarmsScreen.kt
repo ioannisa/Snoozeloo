@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.R
+import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.AlarmUiState
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
@@ -44,7 +45,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AlarmsScreenRoot(
-    onOpenAlarmEditor: (alarmId: String) -> Unit,
+    onOpenAlarmEditor: (alarm: Alarm) -> Unit,
     viewModel: AlarmsViewModel = koinViewModel()
 ) {
     val scope = rememberCoroutineScope()
@@ -53,9 +54,7 @@ fun AlarmsScreenRoot(
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is AlarmsScreenEvent.OnSelectAlarms -> {
-                if (event.alarmId.trim().isNotEmpty()) {
-                    onOpenAlarmEditor(event.alarmId)
-                }
+                onOpenAlarmEditor(event.alarm)
             }
 
             is AlarmsScreenEvent.OnShowSnackBar -> {
@@ -133,7 +132,7 @@ private fun AlarmsListScreen(
             )
         }
 
-        if (alarms.none { !it.alarm.temporary }) {
+        if (alarms.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -158,7 +157,7 @@ private fun AlarmsListScreen(
 
         LazyColumn {
             items(
-                items = alarms.filter { !it.alarm.temporary },
+                items = alarms,
                 key = { item -> item.alarm.id }
             ) { alarmUiState ->
                 SwipeableAlarmItem(

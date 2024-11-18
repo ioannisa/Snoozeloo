@@ -9,6 +9,7 @@ lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 composeBom = "2024.11.00"
 
+navtypeparcelablehelperlibrary = "1.0.1"
 uiTextGoogleFonts = "1.7.5"
 coreSplashscreen = "1.0.1"
 timber = "5.0.1"
@@ -52,6 +53,9 @@ timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 secure-persist = { module = "com.github.ioannisa.secured-android-persist:secure-persist", version.ref = "securePersist" }
 secure-persist-compose = { module = "com.github.ioannisa.secured-android-persist:secure-persist-compose", version.ref = "securePersist" }
 
+# NavType Parcelable Helper Library for Navigation Component
+navtypeparcelablehelperlibrary = { module = "com.github.ioannisa:NavTypeParcelableHelperLibrary", version.ref = "navtypeparcelablehelperlibrary" }
+
 # room
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
@@ -72,6 +76,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-parcelize = { id = "kotlin-parcelize" }
 
 #serialization
 jetbrains-kotlin-serialization = { id ="org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinxSerialization"}

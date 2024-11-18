@@ -32,18 +32,18 @@ class AlarmsRepositoryImpl(
         return localResult.asEmptyDataResult()
     }
 
-    override suspend fun createNewAlarm(): EmptyDataResult<DataError> {
-        val emptyAlarm = Alarm(
+    override fun generateNewAlarm(): Alarm {
+        return Alarm(
             id = UUID.randomUUID().toString(),
             hour = 0,
             minute = 0,
             title = "",
-            isEnabled = false,
+            isEnabled = true,
             ringtoneTitle = "",
             ringtoneUri = null,
             volume = 0.5f,
             vibrate = true,
-            temporary = true,
+            isNewAlarm = true,
             selectedDays = DaysOfWeek(
                 mo = true,
                 tu = true,
@@ -54,6 +54,10 @@ class AlarmsRepositoryImpl(
                 su = true
             )
         )
+    }
+
+    override suspend fun createNewAlarm(): EmptyDataResult<DataError> {
+        val emptyAlarm = generateNewAlarm()
 
         val localResult = localDataSource.upsertAlarm(emptyAlarm)
         if (localResult !is DataResult.Success) {

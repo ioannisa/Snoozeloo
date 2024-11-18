@@ -1,6 +1,7 @@
 package eu.anifantakis.snoozeloo.di
 
 import eu.anifantakis.snoozeloo.MainViewModel
+import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms.AlarmsViewModel
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.maineditor.AlarmEditViewModel
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmDismissActivityViewModel
@@ -15,9 +16,9 @@ val appModule = module {
     viewModelOf(::AlarmDismissActivityViewModel)
     viewModelOf(::AlarmsViewModel)
 
-    viewModel { (alarmId: String) ->
+    viewModel { (alarm: Alarm) ->
         AlarmEditViewModel(
-            alarmId = alarmId,
+            alarm = alarm,
             repository = get(),
             alarmScheduler = get()
         )

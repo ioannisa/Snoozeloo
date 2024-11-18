@@ -39,7 +39,7 @@ sealed interface AlarmsScreenAction {
 }
 
 sealed interface AlarmsScreenEvent {
-    data class OnSelectAlarms(val alarmId: String): AlarmsScreenEvent
+    data class OnSelectAlarms(val alarm: Alarm): AlarmsScreenEvent
     data class OnShowSnackBar(val message: String): AlarmsScreenEvent
 }
 
@@ -57,9 +57,6 @@ class AlarmsViewModel(
 
     private var minuteTickerJob: Job? = null
 
-    private var isInitialLoad = true
-    private var currentAlarmCount = 0
-
     init {
         loadAlarms()
         startMinuteTicker()
@@ -71,22 +68,6 @@ class AlarmsViewModel(
 
             repository.getAlarms()
                 .collect { alarms ->
-                    // Only check for new alarms if it's not the initial load
-                    if (!isInitialLoad && alarms.size > currentAlarmCount) {
-                        // Get the most recently added alarm (it will be the one that's not in our current state)
-                        val newAlarm = alarms.firstOrNull { alarm ->
-                            state.alarms.none { it.alarm.id == alarm.id }
-                        }
-
-                        // If we found the new alarm, select it to open the editor
-                        newAlarm?.let {
-                            onAction(AlarmsScreenAction.SelectAlarmsScreen(it))
-                        }
-                    }
-
-                    currentAlarmCount = alarms.size
-                    isInitialLoad = false
-
                     state = state.copy(
                         alarms = alarms.map { alarm ->
                             AlarmUiState(
@@ -135,7 +116,8 @@ class AlarmsViewModel(
         when (action) {
             is AlarmsScreenAction.AddAlarmsScreen -> {
                 viewModelScope.launch {
-                    repository.createNewAlarm()
+                    val newAlarm = repository.generateNewAlarm()
+                    eventChannel.send(AlarmsScreenEvent.OnSelectAlarms(newAlarm))
                 }
             }
             is AlarmsScreenAction.EnableAlarmsScreen -> {
@@ -177,7 +159,7 @@ class AlarmsViewModel(
                         selectedAlarm = state.alarms.firstOrNull{ it.alarm.id == action.alarm.id }?.alarm
                     )
 
-                    eventChannel.send(AlarmsScreenEvent.OnSelectAlarms(action.alarm.id))
+                    eventChannel.send(AlarmsScreenEvent.OnSelectAlarms(action.alarm))
                 }
             }
             is AlarmsScreenAction.ChangeTimeFormat -> {

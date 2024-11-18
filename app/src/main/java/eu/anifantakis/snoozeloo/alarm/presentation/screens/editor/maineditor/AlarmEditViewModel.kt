@@ -5,14 +5,12 @@ import androidx.lifecycle.viewModelScope
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.AlarmsRepository
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
-import eu.anifantakis.snoozeloo.alarm.domain.datasource.AlarmId
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.AlarmUiState
 import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
 import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
 import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +20,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
 
 sealed interface AlarmEditorScreenAction {
     data class UpdateAlarmTime(val hour: Int, val minute: Int): AlarmEditorScreenAction
@@ -47,12 +44,12 @@ sealed interface AlarmEditorScreenEvent {
  * ViewModel responsible for managing the alarm editing screen.
  * Handles alarm creation, modification, and state management.
  *
- * @param alarmId Unique identifier of the alarm being edited
+ * @param alarm The Alarm which is to be edited
  * @param repository Repository for alarm data operations
  * @param alarmScheduler Scheduler for managing alarm timing
  */
 class AlarmEditViewModel(
-    alarmId: String,
+    alarm: Alarm,
     private val repository: AlarmsRepository,
     private val alarmScheduler: AlarmScheduler
 ): ViewModel() {
@@ -88,7 +85,7 @@ class AlarmEditViewModel(
                 ).formatTimeUntil(),
                 // Determine if current state differs from original
                 hasChanges = originalAlarm?.let { originalAlarm ->
-                    alarm != originalAlarm || alarm.temporary
+                    alarm != originalAlarm || alarm.isNewAlarm
                 } ?: false
             )
         }
@@ -103,7 +100,7 @@ class AlarmEditViewModel(
     val events = eventChannel.receiveAsFlow()
 
     init {
-        loadAlarm(alarmId)
+        loadAlarm(alarm)
     }
 
     /**
@@ -160,18 +157,17 @@ class AlarmEditViewModel(
             is AlarmEditorScreenAction.SaveAlarm -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     _baseAlarmState.value?.let { currentAlarm ->
-                        // Convert temporary alarm to permanent if needed
-                        val updatedAlarm = if (currentAlarm.temporary) {
+                        // Since we save, unflag alarm from "new"
+                        val updatedAlarm = if (currentAlarm.isNewAlarm) {
                             currentAlarm.copy(
-                                temporary = false,
-                                isEnabled = true
+                                isNewAlarm = false
                             )
                         } else {
                             currentAlarm
                         }
 
-                        // Schedule alarm if it's not temporary
-                        if (!updatedAlarm.temporary) {
+                        // Schedule alarm if it is enabled
+                        if (updatedAlarm.isEnabled) {
                             alarmScheduler.schedule(updatedAlarm)
                         }
 
@@ -198,13 +194,6 @@ class AlarmEditViewModel(
                     _baseAlarmState.value = original
 
                     viewModelScope.launch(Dispatchers.IO) {
-                        _baseAlarmState.value?.let { currentState ->
-                            // Delete temporary alarms when cancelling
-                            if (currentState.temporary) {
-                                repository.deleteAlarm(currentState.id)
-                            }
-                        }
-
                         // Add delay for time change animation
                         if (hadTimeChanges) {
                             delay(400L)
@@ -222,31 +211,12 @@ class AlarmEditViewModel(
         }
     }
 
-    // Flag to prevent multiple loads of the same alarm
-    private var loaded = false
-
     /**
-     * Loads alarm data from repository
+     * Loads Initializes Alarm state with the provided alarm
      * Prevents multiple loads of the same alarm
      */
-    fun loadAlarm(id: AlarmId) {
-        if (loaded) return
-
-        loaded = true
-        viewModelScope.launch {
-            try {
-                // Load alarm data asynchronously
-                val alarmDeferred = async { repository.getAlarm(id) }
-                val loadedAlarm = alarmDeferred.await()
-
-                // Store original and create working copy
-                originalAlarm = loadedAlarm
-                _baseAlarmState.value = loadedAlarm.copy()
-            } catch (e: Exception) {
-                // Rethrow cancellation exceptions, log others
-                if (e is CancellationException) throw e
-                e.printStackTrace()
-            }
-        }
+    private fun loadAlarm(alarm: Alarm) {
+        originalAlarm = alarm.copy()
+        _baseAlarmState.value = alarm.copy()
     }
 }
