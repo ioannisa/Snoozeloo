@@ -113,6 +113,7 @@ dependencies {
 
             // NavType Parcelable Helper Library for Navigation Component
             // https://github.com/ioannisa/NavTypeParcelableHelperLibrary
+            // https://www.youtube.com/watch?v=MXRn_2l8sd4&list=PLp_FpnyDwvuDLq_I-C3tJqDiHOFuIzJgk&index=8
             // using it to pass entire Alarm object to the editor screen with just a line of code
             implementation(libs.navtypeparcelablehelperlibrary)
     // [ <----- IOANNIS ANIFANTAKIS LIBRARIES ]
