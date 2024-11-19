@@ -18,6 +18,7 @@ import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
 import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UiText
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.toUiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.combine
@@ -119,11 +120,12 @@ class AlarmsViewModel(
                 alarms.map { alarm ->
                     AlarmUiState(
                         alarm = alarm,
-                        timeUntilNextAlarm = calculateTimeUntilNextAlarm(
-                            alarm.hour,
-                            alarm.minute,
-                            alarm.selectedDays
-                        ).formatTimeUntil()
+                        timeUntilNextAlarm =
+                            calculateTimeUntilNextAlarm(
+                                alarm.hour,
+                                alarm.minute,
+                                alarm.selectedDays
+                            ).formatTimeUntil().toUiText()
                     )
                 }
             }.collect { alarmUiStates ->

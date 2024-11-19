@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import eu.anifantakis.snoozeloo.core.domain.util.ResourceString
 
 sealed interface UiText {
 
@@ -30,4 +31,8 @@ sealed interface UiText {
             is StringResource -> context.getString(id, *flattenArgs())
         }
     }
+}
+
+fun ResourceString.toUiText(): UiText.StringResource {
+    return UiText.StringResource(id, args)
 }

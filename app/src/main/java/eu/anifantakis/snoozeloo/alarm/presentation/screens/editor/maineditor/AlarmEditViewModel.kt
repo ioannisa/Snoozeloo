@@ -11,6 +11,7 @@ import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
 import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
 import eu.anifantakis.snoozeloo.core.domain.util.toComposeState
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.toUiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -85,7 +86,7 @@ class AlarmEditViewModel(
                     alarm.hour,
                     alarm.minute,
                     alarm.selectedDays
-                ).formatTimeUntil(),
+                ).formatTimeUntil().toUiText(),
                 // Determine if current state differs from original
                 hasChanges = originalAlarm?.let { originalAlarm ->
                     alarm != originalAlarm || alarm.isNewAlarm
