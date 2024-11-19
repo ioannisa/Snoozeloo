@@ -53,7 +53,7 @@ fun AlarmsScreenRoot(
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            is AlarmsScreenEvent.OnSelectAlarms -> {
+            is AlarmsScreenEvent.OnOpenAlarmEditorFor -> {
                 onOpenAlarmEditor(event.alarm)
             }
 
@@ -89,7 +89,7 @@ private fun AlarmsScreen(
 ) {
     AppScreenWithFAB(
         onFabClick = {
-            onAction(AlarmsScreenAction.AddAlarmsScreen)
+            onAction(AlarmsScreenAction.AddNewAlarm)
         }
     ) {
         AlarmsListScreen(

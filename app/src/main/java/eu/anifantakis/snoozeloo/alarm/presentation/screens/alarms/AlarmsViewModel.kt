@@ -4,10 +4,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.anifantakis.lib.securepersist.PersistManager
-import eu.anifantakis.lib.securepersist.compose.mutableStateOf
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.AlarmsRepository
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
@@ -19,6 +19,9 @@ import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -30,7 +33,7 @@ data class AlarmsScreenState(
 )
 
 sealed interface AlarmsScreenAction {
-    data object AddAlarmsScreen : AlarmsScreenAction
+    data object AddNewAlarm : AlarmsScreenAction
     data class EnableAlarmsScreen(val alarm: Alarm, val enabled: Boolean) : AlarmsScreenAction
     data class ChangeAlarmsScreenDays(val alarm: Alarm, val selectedDays: DaysOfWeek) : AlarmsScreenAction
     data class DeleteAlarmsScreen(val alarm: Alarm) : AlarmsScreenAction
@@ -40,7 +43,7 @@ sealed interface AlarmsScreenAction {
 }
 
 sealed interface AlarmsScreenEvent {
-    data class OnSelectAlarms(val alarm: Alarm): AlarmsScreenEvent
+    data class OnOpenAlarmEditorFor(val alarm: Alarm): AlarmsScreenEvent
     data class OnShowSnackBar(val message: String): AlarmsScreenEvent
 }
 
@@ -69,6 +72,14 @@ class AlarmsViewModel(
         loadAlarms()
         startMinuteTicker()
     }
+
+    // React on changes in selected alarm by sending an event to UI to open the Alarm editor for that alarm
+    private val selectedAlarmEditorJob = snapshotFlow { state.selectedAlarm }
+        .filterNotNull()
+        .map { alarm ->
+            eventChannel.send(AlarmsScreenEvent.OnOpenAlarmEditorFor(alarm))
+        }
+        .launchIn(viewModelScope)
 
     private fun loadAlarms() {
         viewModelScope.launch {
@@ -118,14 +129,15 @@ class AlarmsViewModel(
     override fun onCleared() {
         super.onCleared()
         minuteTickerJob?.cancel()
+        selectedAlarmEditorJob.cancel()
     }
 
     fun onAction(action: AlarmsScreenAction) {
         when (action) {
-            is AlarmsScreenAction.AddAlarmsScreen -> {
+            is AlarmsScreenAction.AddNewAlarm -> {
                 viewModelScope.launch {
                     val newAlarm = repository.generateNewAlarm()
-                    eventChannel.send(AlarmsScreenEvent.OnSelectAlarms(newAlarm))
+                    eventChannel.send(AlarmsScreenEvent.OnOpenAlarmEditorFor(newAlarm))
                 }
             }
             is AlarmsScreenAction.EnableAlarmsScreen -> {
@@ -162,13 +174,9 @@ class AlarmsViewModel(
             }
 
             is AlarmsScreenAction.SelectAlarmsScreen -> {
-                viewModelScope.launch {
-                    state = state.copy(
-                        selectedAlarm = state.alarms.firstOrNull{ it.alarm.id == action.alarm.id }?.alarm
-                    )
-
-                    eventChannel.send(AlarmsScreenEvent.OnSelectAlarms(action.alarm))
-                }
+                state = state.copy(
+                    selectedAlarm = state.alarms.first{ it.alarm.id == action.alarm.id }.alarm
+                )
             }
             is AlarmsScreenAction.ChangeTimeFormat -> {
                 state = state.copy(use24HourFormat = action.use24HourFormat)
