@@ -95,6 +95,9 @@ class AlarmsViewModel(
         .filterNotNull()
         .map { alarm ->
             eventChannel.send(AlarmsScreenEvent.OnOpenAlarmEditorFor(alarm))
+            state = state.copy(
+                selectedAlarm = null
+            )
         }
         .launchIn(viewModelScope)
 
