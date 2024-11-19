@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -50,6 +51,7 @@ fun AlarmsScreenRoot(
 ) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
@@ -60,7 +62,7 @@ fun AlarmsScreenRoot(
             is AlarmsScreenEvent.OnShowSnackBar -> {
                 scope.launch {
                     snackbarHostState.showSnackbar(
-                        message = event.message,
+                        message = event.message.asString(context),
                         actionLabel = null,
                         duration = SnackbarDuration.Short
                     )
