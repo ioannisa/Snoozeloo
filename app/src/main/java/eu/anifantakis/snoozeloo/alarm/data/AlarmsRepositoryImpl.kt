@@ -10,6 +10,7 @@ import eu.anifantakis.snoozeloo.core.domain.util.DataResult
 import eu.anifantakis.snoozeloo.core.domain.util.EmptyDataResult
 import eu.anifantakis.snoozeloo.core.domain.util.asEmptyDataResult
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDateTime
 import java.util.UUID
 
 class AlarmsRepositoryImpl(
@@ -33,10 +34,13 @@ class AlarmsRepositoryImpl(
     }
 
     override fun generateNewAlarm(): Alarm {
+        // a fresh alarm will start with current hour and minute
+        val now = LocalDateTime.now()
+
         return Alarm(
             id = UUID.randomUUID().toString(),
-            hour = 0,
-            minute = 0,
+            hour = now.hour,
+            minute = now.minute,
             title = "",
             isEnabled = true,
             ringtoneTitle = "",
