@@ -39,7 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
@@ -67,7 +66,7 @@ fun AlarmEditScreenRoot(
     onOpenRingtoneSetting: () -> Unit,
     onClose: () -> Unit
 ) {
-    val alarmUiState by viewModel.alarmUiState.collectAsStateWithLifecycle()
+    val alarmUiState by viewModel.alarmUiState
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 

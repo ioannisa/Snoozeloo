@@ -10,6 +10,7 @@ import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
 import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
 import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
+import eu.anifantakis.snoozeloo.core.domain.util.toComposeState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -70,6 +71,8 @@ class AlarmEditViewModel(
         )
 
     // Combines base alarm state with minute ticker to create derived UI state
+    // Here we also demonstrate how we can turn a StateFlow to State with the extension function toComposeState
+    // which is a nice alternative to the "collect { state -> myState = myState.copy(...) } " function we use in the AlarmsViewModel
     val alarmUiState = combine(
         _baseAlarmState,
         minuteTicker
@@ -93,7 +96,7 @@ class AlarmEditViewModel(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = null
-    )
+    ).toComposeState(viewModelScope)
 
     // Channel for one-time events (navigation, snackbar messages, etc.)
     private val eventChannel = Channel<AlarmEditorScreenEvent>()

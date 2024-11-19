@@ -17,8 +17,8 @@ import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
 import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -56,21 +56,13 @@ class AlarmsViewModel(
     var state by mutableStateOf(AlarmsScreenState())
         private set
 
-    // we could use a state, but this is not necessary in our case because we want in MVI all states in a single source
-//    var use24HourFormat by persistManager.dataStorePrefs.mutableStateOf(false)
-//        private set
-
-    // so we can use the non-statetfull approach
-    private var use24HourFormat by persistManager.dataStorePrefs.preference( false)
+    private var use24HourFormat by persistManager.dataStorePrefs.preference(false)
 
     private val eventChannel = Channel<AlarmsScreenEvent>()
     val events = eventChannel.receiveAsFlow()
 
-    private var minuteTickerJob: Job? = null
-
     init {
-        loadAlarms()
-        startMinuteTicker()
+        initializeViewModel()
     }
 
     // React on changes in selected alarm by sending an event to UI to open the Alarm editor for that alarm
@@ -81,54 +73,34 @@ class AlarmsViewModel(
         }
         .launchIn(viewModelScope)
 
-    private fun loadAlarms() {
+    private fun initializeViewModel() {
         viewModelScope.launch {
             state = state.copy(use24HourFormat = use24HourFormat)
 
-            repository.getAlarms()
-                .collect { alarms ->
-                    state = state.copy(
-                        alarms = alarms.map { alarm ->
-                            AlarmUiState(
-                                alarm = alarm,
-                                timeUntilNextAlarm =
-                                calculateTimeUntilNextAlarm(
-                                    alarm.hour,
-                                    alarm.minute,
-                                    alarm.selectedDays
-                                ).formatTimeUntil()
-                            )
-                        }
+            // Combine the alarm data flow with the minute ticker
+            combine(
+                repository.getAlarms(),
+                ClockUtils.createMinuteTickerFlow()
+            ) { alarms, _ ->
+                // The second parameter (_) is ignored as we only need it to trigger updates
+                alarms.map { alarm ->
+                    AlarmUiState(
+                        alarm = alarm,
+                        timeUntilNextAlarm = calculateTimeUntilNextAlarm(
+                            alarm.hour,
+                            alarm.minute,
+                            alarm.selectedDays
+                        ).formatTimeUntil()
                     )
                 }
-        }
-    }
-
-    private fun startMinuteTicker() {
-        minuteTickerJob?.cancel()
-        minuteTickerJob = viewModelScope.launch {
-            ClockUtils.createMinuteTickerFlow()
-                .collect {
-                    // Update time until next alarm for all alarms
-                    state = state.copy(
-                        alarms = state.alarms.map { uiState ->
-                            uiState.copy(
-                                timeUntilNextAlarm =
-                                    calculateTimeUntilNextAlarm(
-                                        uiState.alarm.hour,
-                                        uiState.alarm.minute,
-                                        uiState.alarm.selectedDays
-                                    ).formatTimeUntil()
-                            )
-                        }
-                    )
-                }
+            }.collect { alarmUiStates ->
+                state = state.copy(alarms = alarmUiStates)
+            }
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        minuteTickerJob?.cancel()
         selectedAlarmEditorJob.cancel()
     }
 
@@ -140,6 +112,7 @@ class AlarmsViewModel(
                     eventChannel.send(AlarmsScreenEvent.OnOpenAlarmEditorFor(newAlarm))
                 }
             }
+
             is AlarmsScreenAction.EnableAlarmsScreen -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     val updatedAlarm = action.alarm.copy(isEnabled = action.enabled)
@@ -154,12 +127,14 @@ class AlarmsViewModel(
                     }
                 }
             }
+
             is AlarmsScreenAction.ChangeAlarmsScreenDays -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     val updatedAlarm = action.alarm.copy(selectedDays = action.selectedDays)
                     repository.upsertAlarm(updatedAlarm)
                 }
             }
+
             is AlarmsScreenAction.DeleteAlarmsScreen -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     alarmScheduler.cancel(action.alarm)
@@ -175,15 +150,14 @@ class AlarmsViewModel(
 
             is AlarmsScreenAction.SelectAlarmsScreen -> {
                 state = state.copy(
-                    selectedAlarm = state.alarms.first{ it.alarm.id == action.alarm.id }.alarm
+                    selectedAlarm = state.alarms.first { it.alarm.id == action.alarm.id }.alarm
                 )
             }
+
             is AlarmsScreenAction.ChangeTimeFormat -> {
-                state = state.copy(use24HourFormat = action.use24HourFormat)
                 viewModelScope.launch(Dispatchers.IO) {
-                    // update DataStore preferences with encrypted value with just a single line
-                    // the key (if not specified) for the preference is the property name.
                     use24HourFormat = action.use24HourFormat
+                    state = state.copy(use24HourFormat = action.use24HourFormat)
                 }
             }
         }
