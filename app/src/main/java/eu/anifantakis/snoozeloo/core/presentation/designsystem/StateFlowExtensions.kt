@@ -1,4 +1,4 @@
-package eu.anifantakis.snoozeloo.core.domain.util
+package eu.anifantakis.snoozeloo.core.presentation.designsystem
 
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.CoroutineScope

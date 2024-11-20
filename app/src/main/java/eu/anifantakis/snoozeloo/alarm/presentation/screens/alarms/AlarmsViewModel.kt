@@ -75,13 +75,13 @@ sealed interface AlarmsScreenEvent {
 class AlarmsViewModel(
     private val repository: AlarmsRepository,
     private val alarmScheduler: AlarmScheduler,
-    persistManager: PersistManager,
+    private val persistManager: PersistManager,
 ): ViewModel() {
 
     var state by mutableStateOf(AlarmsScreenState())
         private set
 
-    private var use24HourFormat by persistManager.dataStorePrefs.preference(false)
+    private var use24HourFormat by persistManager.dataStorePrefs.preference(false, encrypted = true)
 
     private val eventChannel = Channel<AlarmsScreenEvent>()
     val events = eventChannel.receiveAsFlow()

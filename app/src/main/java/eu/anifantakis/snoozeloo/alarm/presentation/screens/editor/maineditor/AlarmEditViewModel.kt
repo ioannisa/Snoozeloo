@@ -10,7 +10,7 @@ import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
 import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
 import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
 import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
-import eu.anifantakis.snoozeloo.core.domain.util.toComposeState
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.toComposeState
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
