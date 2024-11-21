@@ -1,11 +1,8 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss
 
-import android.app.AlarmManager
 import android.app.Application
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
@@ -17,7 +14,7 @@ import android.provider.Settings
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import eu.anifantakis.snoozeloo.core.data.AlarmReceiver
+import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,7 +32,10 @@ data class AlarmState(
     val volume: Float = 0.5f,
     val shouldVibrate: Boolean = true,
     val ringtoneUri: String? = null,
-    val alarmId: String? = null
+    val alarmId: String? = null,
+    val dayOfWeek: Int? = null,
+    val hour: Int = 0,
+    val minute: Int = 0
 )
 
 /**
@@ -47,6 +47,7 @@ data class AlarmState(
  */
 class AlarmDismissActivityViewModel(
     application: Application,
+    private val alarmScheduler: AlarmScheduler,
     private val onFinish: () -> Unit
 ) : AndroidViewModel(application) {
 
@@ -69,9 +70,6 @@ class AlarmDismissActivityViewModel(
      */
     private val context: Context
         get() = getApplication()
-
-    private val alarmManager: AlarmManager
-        get() = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     private val notificationManager: NotificationManager
         get() = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -98,7 +96,10 @@ class AlarmDismissActivityViewModel(
         volume: Float,
         shouldVibrate: Boolean,
         ringtoneUri: String?,
-        alarmId: String?
+        alarmId: String?,
+        dayOfWeek: Int,
+        hour: Int,
+        minute: Int
     ) {
         _state.update {
             it.copy(
@@ -106,7 +107,10 @@ class AlarmDismissActivityViewModel(
                 volume = volume,
                 shouldVibrate = shouldVibrate,
                 ringtoneUri = ringtoneUri,
-                alarmId = alarmId
+                alarmId = alarmId,
+                dayOfWeek = if (dayOfWeek != -1) dayOfWeek else null,
+                hour = hour,
+                minute = minute
             )
         }
     }
@@ -200,65 +204,12 @@ class AlarmDismissActivityViewModel(
      * Schedules a new alarm and dismisses the current one
      */
     fun snoozeAlarm() {
-
         println("Snoozing alarm 1")
         if (state.value.alarmId != null) {
             println("Snoozing alarm 2")
-            scheduleSnoozeAlarm()
+            alarmScheduler.scheduleSnooze(state.value, DEFAULT_SNOOZE_DURATION_MINUTES)
         }
         dismissAlarm()
-    }
-
-    /**
-     * Schedules a new alarm for 5 minutes later
-     * Creates a PendingIntent with the current alarm's parameters
-     */
-    private fun scheduleSnoozeAlarm() {
-        println("Snoozing alarm 3")
-
-        val title = if (state.value.title.contains("(Snoozed)"))
-            state.value.title
-        else
-            "${state.value.title} (Snoozed)"
-
-        val snoozeIntent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", state.value.alarmId)
-            putExtra("TITLE", title)
-            putExtra("VOLUME", state.value.volume)
-            putExtra("VIBRATE", state.value.shouldVibrate)
-            putExtra("ALARM_URI", state.value.ringtoneUri)
-        }
-        println("Snoozing alarm 4")
-
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            System.currentTimeMillis().toInt(),
-            snoozeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        println("Snoozing alarm 5")
-
-        val triggerTime = System.currentTimeMillis() +
-                (DEFAULT_SNOOZE_DURATION_MINUTES * 60 * 1000)
-
-        println("Snoozing alarm 6  at $triggerTime")
-
-        // Schedule alarm using appropriate API based on Android version
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setAlarmClock(
-                AlarmManager.AlarmClockInfo(triggerTime, pendingIntent),
-                pendingIntent
-            )
-        } else {
-            alarmManager.setExact(
-                AlarmManager.RTC_WAKEUP,
-                triggerTime,
-                pendingIntent
-            )
-        }
-
-        println("Snoozing alarm 7")
     }
 
     /**
@@ -271,27 +222,37 @@ class AlarmDismissActivityViewModel(
             Timber.tag(TAG).d("Dismissing alarm")
 
             // Stop and release MediaPlayer
-            mediaPlayer?.apply {
-                try {
-                    if (isPlaying) stop()
-                    release()
-                } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "Error stopping media player")
-                }
-            }
-            mediaPlayer = null
-
-            // Stop vibration
-            vibrator?.cancel()
-            vibrator = null
+            stopAlarmPlayback()
 
             // Remove notification
             notificationManager.cancel(NOTIFICATION_ID)
+
+            // Reschedule for next week
+            if (state.value.alarmId != null && state.value.dayOfWeek != null) {
+                alarmScheduler.scheduleNextWeek(state.value)
+            }
 
             // Update state and close screen
             _state.update { it.copy(isPlaying = false) }
             onFinish()
         }
+    }
+
+    private fun stopAlarmPlayback() {
+        // Stop and release MediaPlayer
+        mediaPlayer?.apply {
+            try {
+                if (isPlaying) stop()
+                release()
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Error stopping media player")
+            }
+        }
+        mediaPlayer = null
+
+        // Stop vibration
+        vibrator?.cancel()
+        vibrator = null
     }
 
     /**

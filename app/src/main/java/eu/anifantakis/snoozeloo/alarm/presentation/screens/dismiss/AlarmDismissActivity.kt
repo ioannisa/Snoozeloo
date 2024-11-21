@@ -93,7 +93,10 @@ class AlarmDismissActivity : ComponentActivity() {
                 volume = intent?.getFloatExtra("VOLUME", DEFAULT_VOLUME) ?: DEFAULT_VOLUME,
                 shouldVibrate = intent?.getBooleanExtra("VIBRATE", true) ?: true,
                 ringtoneUri = intent?.getStringExtra("ALARM_URI"),
-                alarmId = intent?.getStringExtra("ALARM_ID")
+                alarmId = intent?.getStringExtra("ALARM_ID"),
+                dayOfWeek = intent?.getIntExtra("DAY_OF_WEEK", -1) ?: -1,
+                hour = intent?.getIntExtra("HOUR", 0) ?: 0,
+                minute = intent?.getIntExtra("MINUTE", 0) ?: 0
             )
 
             when (intent?.action) {
@@ -103,6 +106,7 @@ class AlarmDismissActivity : ComponentActivity() {
             }
         }
     }
+
 
     // Handle new intents (e.g., when snooze triggers)
     override fun onNewIntent(intent: Intent) {
