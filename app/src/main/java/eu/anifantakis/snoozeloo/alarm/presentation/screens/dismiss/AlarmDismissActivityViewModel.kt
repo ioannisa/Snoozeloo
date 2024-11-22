@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
@@ -41,9 +42,6 @@ data class AlarmState(
 /**
  * ViewModel for the alarm dismissal screen
  * Handles alarm playback, vibration, snoozing, and dismissal
- *
- * @param application Application context needed for system services
- * @param onFinish Callback to close the screen when alarm is dismissed
  */
 class AlarmDismissActivityViewModel(
     application: Application,
@@ -64,9 +62,10 @@ class AlarmDismissActivityViewModel(
     // Media components that need lifecycle management
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
+    private var previousAlarmVolume: Int? = null
 
     /**
-     * Lazy getters for Android system services to ensure they're only retrieved when needed
+     * Lazy getters for Android system services
      */
     private val context: Context
         get() = getApplication()
@@ -74,10 +73,9 @@ class AlarmDismissActivityViewModel(
     private val notificationManager: NotificationManager
         get() = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-    /**
-     * Gets the appropriate vibrator service based on Android version
-     * Handles the API level differences in vibrator service acquisition
-     */
+    private val audioManager: AudioManager
+        get() = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
     private val vibratorService: Vibrator
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager =
@@ -87,6 +85,11 @@ class AlarmDismissActivityViewModel(
             @Suppress("DEPRECATION")
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
+
+    init {
+        // Store previous alarm volume
+        previousAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+    }
 
     /**
      * Updates the alarm state with data received from the launching intent
@@ -117,7 +120,6 @@ class AlarmDismissActivityViewModel(
 
     /**
      * Initiates alarm playback and vibration if enabled
-     * Runs in coroutine scope to handle potential long-running operations
      */
     fun startAlarm() {
         viewModelScope.launch {
@@ -135,40 +137,49 @@ class AlarmDismissActivityViewModel(
     }
 
     /**
-     * Configures and starts the MediaPlayer for alarm sound
-     * Sets up audio attributes, data source, and playback parameters
+     * Configures and starts the MediaPlayer for alarm sound with proper volume control
      */
     private fun startAlarmSound() {
-        mediaPlayer = MediaPlayer().apply {
-            // Configure for alarm audio stream
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
+        try {
+            // Get max volume for alarm stream and set initial volume
+            val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+            val volumeLevel = (maxVolume * state.value.volume).toInt()
+            audioManager.setStreamVolume(
+                AudioManager.STREAM_ALARM,
+                volumeLevel,
+                0 // Flags - 0 means no feedback UI
             )
 
-            // Set ringtone source, falling back to system default if none specified
-            setDataSource(
-                context,
-                if (!state.value.ringtoneUri.isNullOrEmpty()) {
-                    Uri.parse(state.value.ringtoneUri)
-                } else {
-                    Settings.System.DEFAULT_ALARM_ALERT_URI
-                }
-            )
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
 
-            // Configure playback settings
-            isLooping = true
-            setVolume(state.value.volume, state.value.volume)
-            prepare()
-            start()
+                setDataSource(
+                    context,
+                    if (!state.value.ringtoneUri.isNullOrEmpty()) {
+                        Uri.parse(state.value.ringtoneUri)
+                    } else {
+                        Settings.System.DEFAULT_ALARM_ALERT_URI
+                    }
+                )
+
+                // Set to full volume since we're controlling via AudioManager
+                setVolume(1.0f, 1.0f)
+                isLooping = true
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error starting alarm sound: ${e.message}")
         }
     }
 
     /**
      * Starts device vibration with a specific pattern
-     * Handles different Android API levels for vibration implementation
      */
     private fun startVibration() {
         vibrator = vibratorService
@@ -201,12 +212,9 @@ class AlarmDismissActivityViewModel(
 
     /**
      * Handles snooze button press
-     * Schedules a new alarm and dismisses the current one
      */
     fun snoozeAlarm() {
-        println("Snoozing alarm 1")
         if (state.value.alarmId != null) {
-            println("Snoozing alarm 2")
             alarmScheduler.scheduleSnooze(state.value, DEFAULT_SNOOZE_DURATION_MINUTES)
         }
         dismissAlarm()
@@ -214,32 +222,32 @@ class AlarmDismissActivityViewModel(
 
     /**
      * Stops all alarm components and cleans up resources
-     * Called when alarm is dismissed or snoozed
      */
     fun dismissAlarm() {
-        println("Snoozing alarm 8")
         viewModelScope.launch {
             Timber.tag(TAG).d("Dismissing alarm")
 
-            // Stop and release MediaPlayer
-            stopAlarmPlayback()
+            // Restore previous volume if available
+            previousAlarmVolume?.let { volume ->
+                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, volume, 0)
+            }
 
-            // Remove notification
+            stopAlarmPlayback()
             notificationManager.cancel(NOTIFICATION_ID)
 
-            // Reschedule for next week
             if (state.value.alarmId != null && state.value.dayOfWeek != null) {
                 alarmScheduler.scheduleNextWeek(state.value)
             }
 
-            // Update state and close screen
             _state.update { it.copy(isPlaying = false) }
             onFinish()
         }
     }
 
+    /**
+     * Stops and releases media playback and vibration
+     */
     private fun stopAlarmPlayback() {
-        // Stop and release MediaPlayer
         mediaPlayer?.apply {
             try {
                 if (isPlaying) stop()
@@ -250,14 +258,12 @@ class AlarmDismissActivityViewModel(
         }
         mediaPlayer = null
 
-        // Stop vibration
         vibrator?.cancel()
         vibrator = null
     }
 
     /**
      * Cleanup when ViewModel is destroyed
-     * Ensures all resources are properly released
      */
     override fun onCleared() {
         super.onCleared()
