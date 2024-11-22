@@ -105,8 +105,7 @@ private fun AlarmToneSettingScreen(
 
     Column(
         verticalArrangement = Arrangement.spacedBy(UIConst.padding),
-        modifier = Modifier
-            .padding(horizontal = UIConst.padding)
+        modifier = Modifier.padding(horizontal = UIConst.padding)
     ) {
         AppActionButton(
             icon = Icons.back,
@@ -119,10 +118,10 @@ private fun AlarmToneSettingScreen(
         }
 
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             state = listState,
         ) {
+            // Add Silent option
             item {
                 RingtoneSettingItem(
                     alarmoneItem = AlarmoneItem(title = "Silent", uri = null),
@@ -133,7 +132,22 @@ private fun AlarmToneSettingScreen(
                     }
                 )
             }
-            items(state.ringtones) { ringtone ->
+
+            // Add Default System Ringtone if available
+            state.defaultSystemRingtone?.let { defaultRingtone ->
+                item {
+                    RingtoneSettingItem(
+                        alarmoneItem = defaultRingtone,
+                        isSelected = defaultRingtone.uri?.toString() == state.currentSelectedRingtone?.uri?.toString(),
+                        onClickOnRingtone = { selectedRingtone ->
+                            onAction(AlarmToneAction.OnSelectAlarmTone(selectedRingtone))
+                        }
+                    )
+                }
+            }
+
+            // Add all other ringtones
+            items(state.ringtones.filter { it.uri?.toString() != state.defaultSystemRingtone?.uri?.toString() }) { ringtone ->
                 RingtoneSettingItem(
                     alarmoneItem = ringtone,
                     isSelected = ringtone.uri?.toString() == state.currentSelectedRingtone?.uri?.toString(),

@@ -31,7 +31,8 @@ sealed interface AlarmToneAction {
 data class AlarmToneState(
     val ringtones: List<AlarmoneItem> = emptyList(),
     val currentSelectedRingtone: AlarmoneItem? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val defaultSystemRingtone: AlarmoneItem? = null
 )
 
 /**
@@ -99,45 +100,42 @@ class AlarmToneSettingViewModel(
     private fun loadRingtones(alarmToneUri: String?) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Show loading state
                 state = state.copy(isLoading = true)
 
                 // Get system default and all available ringtones
                 val defaultSystemAlarmRingtone = ringtoneRepository.getSystemDefaultAlarmRingtone()
                 val ringtones = ringtoneRepository.getAllRingtones()
 
+                // Create default ringtone item
+                val defaultRingtoneItem = defaultSystemAlarmRingtone.let { (title, uri) ->
+                    AlarmoneItem(
+                        title = title,
+                        uri = uri,
+                        isSelected = alarmToneUri.isNullOrEmpty()
+                    )
+                }
+
                 // Map ringtones to UI items with selection state
                 val toneItems = ringtones.map { (title, uri) ->
                     AlarmoneItem(
                         title = title,
                         uri = uri,
-                        isSelected = when {
-                            // Select default ringtone if no previous selection
-                            alarmToneUri.isNullOrEmpty() && uri == defaultSystemAlarmRingtone.second -> true
-                            // Select previously selected ringtone
-                            uri.toString() == alarmToneUri -> true
-                            // Not selected
-                            else -> false
-                        }
+                        isSelected = uri.toString() == alarmToneUri
                     )
                 }
 
-                // Update state with loaded ringtones
+                // Update state with loaded ringtones and default ringtone
                 state = state.copy(
                     ringtones = toneItems,
+                    defaultSystemRingtone = defaultRingtoneItem,
+                    currentSelectedRingtone = when {
+                        // If a specific ringtone was requested
+                        !alarmToneUri.isNullOrEmpty() -> toneItems.find { it.uri.toString() == alarmToneUri }
+                        // If no ringtone was specified, use the default
+                        else -> defaultRingtoneItem
+                    },
                     isLoading = false
                 )
-
-                // If no ringtone is selected, default to system alarm tone
-                if (toneItems.none { it.isSelected }) {
-                    defaultSystemAlarmRingtone?.let { (title, uri) ->
-                        handleRingtoneSelection(AlarmoneItem(
-                            title = title,
-                            uri = uri,
-                            isSelected = true
-                        ))
-                    }
-                }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load ringtones")
                 state = state.copy(isLoading = false)
