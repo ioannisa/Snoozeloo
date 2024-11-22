@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
@@ -43,7 +44,8 @@ private fun DayFilterChip(
         label = {
             AppText12(
                 text = day.label,
-                color = MaterialTheme.colorScheme.surfaceDim
+                fontWeight = FontWeight.W700,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
             )
         },
 
@@ -56,8 +58,6 @@ private fun DayFilterChip(
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = MaterialTheme.colorScheme.primary,
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
         border = FilterChipDefaults.filterChipBorder(
             borderWidth = 0.dp,
@@ -171,8 +171,8 @@ private fun WeeklyChipsPreview() {
                 we = false,
                 th = false,
                 fr = false,
-                sa = false,
-                su = false
+                sa = true,
+                su = true
             )
         )
     }

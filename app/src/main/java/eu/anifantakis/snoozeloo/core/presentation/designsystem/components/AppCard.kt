@@ -34,7 +34,7 @@ fun AppCard(
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(UIConst.padding)
     ) {
         content()
     }

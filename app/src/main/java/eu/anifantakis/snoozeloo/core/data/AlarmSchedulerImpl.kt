@@ -180,7 +180,7 @@ class AlarmSchedulerImpl(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val triggerTime = System.currentTimeMillis() + snoozeDurationMinutes * 1 * 1000
+        val triggerTime = System.currentTimeMillis() + snoozeDurationMinutes * 60 * 1000
 
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
