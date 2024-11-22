@@ -44,7 +44,7 @@ fun AppSwitch(
     checkedThumbColor: Color = MaterialTheme.colorScheme.onPrimary,
     uncheckedThumbColor: Color = MaterialTheme.colorScheme.onPrimary,
     checkedTrackColor: Color = MaterialTheme.colorScheme.primary,
-    uncheckedTrackColor: Color = UIConst.colorWithAlpha(MaterialTheme.colorScheme.primary, alpha = 0.3f),
+    uncheckedTrackColor: Color =  UIConst.colorWithAlpha(MaterialTheme.colorScheme.secondary, alpha = 0.5f),
     animationSpec: AnimationSpec<Float> = spring(
         dampingRatio = Spring.DampingRatioMediumBouncy,
         stiffness = Spring.StiffnessLow
@@ -133,7 +133,7 @@ private fun AppSwitchPreview() {
                 }
 
                 AppSwitch(
-                    checked = false,
+                    checked = true,
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessHigh

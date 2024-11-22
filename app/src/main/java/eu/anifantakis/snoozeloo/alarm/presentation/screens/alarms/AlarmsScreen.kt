@@ -126,8 +126,11 @@ private fun AlarmsListScreen(
                 checked = use24HourFormat,
                 uncheckedTrackColor = MaterialTheme.colorScheme.secondary,
                 checkedTrackColor = MaterialTheme.colorScheme.secondary,
+                checkedThumbColor = MaterialTheme.colorScheme.onSecondary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSecondary,
                 uncheckedText = stringResource(R.string.clock_12h),
                 checkedText = stringResource(R.string.clock_24h),
+                textColor = MaterialTheme.colorScheme.onSecondary,
                 onCheckedChange = { use24Hour ->
                     onEvent(AlarmsScreenAction.ChangeTimeFormat(use24Hour))
                 }
