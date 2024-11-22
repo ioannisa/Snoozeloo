@@ -41,11 +41,12 @@ private fun DayFilterChip(
         selected = selected,
         onClick = { if (day.enabled) onSelectedChanged(!selected) },
         label = {
-            Text(
+            AppText12(
                 text = day.label,
-                style = MaterialTheme.typography.bodySmall
+                color = MaterialTheme.colorScheme.surfaceDim
             )
         },
+
         modifier = modifier.defaultMinSize(
             minWidth = 32.dp,
             minHeight = 32.dp

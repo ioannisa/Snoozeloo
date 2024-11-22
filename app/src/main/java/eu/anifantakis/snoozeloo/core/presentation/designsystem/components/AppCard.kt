@@ -32,7 +32,7 @@ fun AppCard(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.onPrimary)
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .fillMaxWidth()
             .padding(16.dp)
     ) {
