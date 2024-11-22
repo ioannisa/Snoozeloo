@@ -90,7 +90,7 @@ class AlarmEditViewModel(
 
                 // Determine if current state differs from original
                 hasChanges = originalAlarm?.let { originalAlarm ->
-                    alarm != originalAlarm || alarm.isNewAlarm
+                    alarm !== originalAlarm || alarm.isNewAlarm
                 } ?: false
             )
         }
