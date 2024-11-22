@@ -90,7 +90,7 @@ class AlarmEditViewModel(
 
                 // Determine if current state differs from original
                 hasChanges = originalAlarm?.let { originalAlarm ->
-                    alarm !== originalAlarm || alarm.isNewAlarm
+                    alarm != originalAlarm || alarm.isNewAlarm
                 } ?: false
             )
         }
@@ -162,26 +162,16 @@ class AlarmEditViewModel(
             is AlarmEditorScreenAction.SaveAlarm -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     _baseAlarmState.value?.let { currentAlarm ->
-                        // Since we save, unflag alarm from "new"
-                        val updatedAlarm = if (currentAlarm.isNewAlarm) {
-                            currentAlarm.copy(
-                                isNewAlarm = false
-                            )
-                        } else {
-                            currentAlarm
-                        }
-
-                        // Schedule alarm if it is enabled
-                        if (updatedAlarm.isEnabled) {
-                            alarmScheduler.schedule(updatedAlarm)
+                        if (currentAlarm.isEnabled) {
+                            alarmScheduler.schedule(currentAlarm)
                         }
 
                         // Persist alarm to storage
-                        repository.upsertAlarm(updatedAlarm)
+                        repository.upsertAlarm(currentAlarm)
 
                         // Update state references
-                        originalAlarm = updatedAlarm
-                        _baseAlarmState.value = updatedAlarm
+                        originalAlarm = currentAlarm
+                        _baseAlarmState.value = currentAlarm
 
                         eventChannel.send(AlarmEditorScreenEvent.OnClose)
                     }
@@ -223,5 +213,6 @@ class AlarmEditViewModel(
     private fun loadAlarm(alarm: Alarm) {
         originalAlarm = alarm.copy()
         _baseAlarmState.value = alarm.copy()
+        println("ALARM IS ${originalAlarm}")
     }
 }

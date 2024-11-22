@@ -204,7 +204,7 @@ class AlarmsViewModel(
             // Sets selected alarm for editing
             is AlarmsScreenAction.SelectAlarmsScreen -> {
                 state = state.copy(
-                    selectedAlarm = state.alarms.first { it.alarm.id == action.alarm.id }.alarm
+                    selectedAlarm = state.alarms.first { it.alarm.id == action.alarm.id }.alarm.copy(isNewAlarm = false)
                 )
             }
 
