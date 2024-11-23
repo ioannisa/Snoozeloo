@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -150,108 +152,129 @@ fun AlarmEditScreen(
                     onAction(AlarmEditorScreenAction.UpdateAlarmTime(hour, minute))
                 }
 
-                AppCard(
+                // under the clock the content should be scrollable to ensure all the content fits
+                Column(
                     modifier = Modifier
-                        .clickable {
-                            showDialog = true
-                        }
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(UIConst.padding)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        AppText16(stringResource(R.string.alarm_name), fontWeight = FontWeight.W700)
-                        AppText16(
-                            if (currentState.alarm.title.trim() == "") {
-                                stringResource(R.string.default_alarm_title)
-                            } else {
-                                currentState.alarm.title.trim()
-                            },
-                            fontWeight = FontWeight.W400,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
 
-                AppCard {
-                    Column {
-                        AppText16(stringResource(R.string.repeat), fontWeight = FontWeight.W700)
-                        AppWeeklyChips(
-                            selectedDays = currentState.alarm.selectedDays,
-                            onSelectionChanged = { newDays ->
-                                onAction(AlarmEditorScreenAction.UpdateAlarmDays(newDays))
-                            },
-                            onError = {
-                                onAction(AlarmEditorScreenAction.ShowDaysValidationError)
+                    AppCard(
+                        modifier = Modifier
+                            .clickable {
+                                showDialog = true
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            AppText16(
+                                stringResource(R.string.alarm_name),
+                                fontWeight = FontWeight.W700
+                            )
+                            AppText16(
+                                if (currentState.alarm.title.trim() == "") {
+                                    stringResource(R.string.default_alarm_title)
+                                } else {
+                                    currentState.alarm.title.trim()
+                                },
+                                fontWeight = FontWeight.W400,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+
+                    AppCard {
+                        Column {
+                            AppText16(stringResource(R.string.repeat), fontWeight = FontWeight.W700)
+                            AppWeeklyChips(
+                                selectedDays = currentState.alarm.selectedDays,
+                                onSelectionChanged = { newDays ->
+                                    onAction(AlarmEditorScreenAction.UpdateAlarmDays(newDays))
+                                },
+                                onError = {
+                                    onAction(AlarmEditorScreenAction.ShowDaysValidationError)
+                                }
+                            )
+                        }
+                    }
+
+                    AppCard(
+                        modifier = Modifier
+                            .clickable {
+                                onAction(AlarmEditorScreenAction.OpenRingtoneSettings)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            AppText16(
+                                stringResource(R.string.alarm_ringtone),
+                                fontWeight = FontWeight.W700
+                            )
+
+                            AppText16(
+                                if (currentState.alarm.ringtoneTitle.trim() == "") {
+                                    stringResource(R.string.default_ringtone_name)
+                                } else {
+                                    currentState.alarm.ringtoneTitle.trim()
+                                },
+                                fontWeight = FontWeight.W400,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+
+                    AppCard {
+                        Column {
+                            AppText16(
+                                stringResource(R.string.alarm_volume),
+                                fontWeight = FontWeight.W700
+                            )
+                            AppSlider(
+                                value = currentState.alarm.volume,
+                                onValueChange = { newValue ->
+                                    onAction(AlarmEditorScreenAction.UpdateAlarmVolume(newValue))
+                                },
+                                valueRange = 0f..1f
+                            )
+                        }
+                    }
+
+                    AppCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            AppText16(
+                                stringResource(R.string.vibrate),
+                                fontWeight = FontWeight.W700
+                            )
+                            AppSwitch(
+                                width = 48,
+                                height = 24,
+                                checked = currentState.alarm.vibrate,
+                                onCheckedChange = { newValue ->
+                                    onAction(AlarmEditorScreenAction.UpdateAlarmVibration(newValue))
+                                }
+                            )
+                        }
+                    }
+
+                    if (showDialog) {
+                        ShowAlertDialog(
+                            initialTitle = currentState.alarm.title.trim(),
+                            onDismiss = { showDialog = false },
+                            onSave = { alarmTitle ->
+                                showDialog = false
+                                onAction(AlarmEditorScreenAction.UpdateAlarmTitle(alarmTitle))
                             }
                         )
                     }
-                }
-
-                AppCard(
-                    modifier = Modifier
-                        .clickable {
-                            onAction(AlarmEditorScreenAction.OpenRingtoneSettings)
-                        }
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        AppText16(stringResource(R.string.alarm_ringtone), fontWeight = FontWeight.W700)
-
-                        AppText16(
-                            if (currentState.alarm.ringtoneTitle.trim() == "") {
-                                stringResource(R.string.default_ringtone_name)
-                            } else {
-                                currentState.alarm.ringtoneTitle.trim()
-                            },
-                            fontWeight = FontWeight.W400,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                }
-
-                AppCard {
-                    Column {
-                        AppText16(stringResource(R.string.alarm_volume), fontWeight = FontWeight.W700)
-                        AppSlider(
-                            value = currentState.alarm.volume,
-                            onValueChange = { newValue ->
-                                onAction(AlarmEditorScreenAction.UpdateAlarmVolume(newValue))
-                            },
-                            valueRange = 0f..1f
-                        )
-                    }
-                }
-
-                AppCard {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AppText16(stringResource(R.string.vibrate), fontWeight = FontWeight.W700)
-                        AppSwitch(
-                            width = 48,
-                            height = 24,
-                            checked = currentState.alarm.vibrate,
-                            onCheckedChange = { newValue ->
-                                onAction(AlarmEditorScreenAction.UpdateAlarmVibration(newValue))
-                            }
-                        )
-                    }
-                }
-
-                if (showDialog) {
-                    ShowAlertDialog(
-                        initialTitle = currentState.alarm.title.trim(),
-                        onDismiss = { showDialog = false },
-                        onSave = { alarmTitle ->
-                            showDialog = false
-                            onAction(AlarmEditorScreenAction.UpdateAlarmTitle(alarmTitle))
-                        }
-                    )
                 }
             }
         }
