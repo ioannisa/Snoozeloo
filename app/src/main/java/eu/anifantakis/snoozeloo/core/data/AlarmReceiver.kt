@@ -12,8 +12,10 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmDismissActivity
-import eu.anifantakis.snoozeloo.alarm.domain.Alarm
-import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
+import eu.anifantakis.snoozeloo.core.data.database.AlarmSchedulerIntent
+import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import timber.log.Timber
 
 /**
@@ -23,7 +25,7 @@ import timber.log.Timber
  * 2. Showing the full-screen alarm activity
  * 3. Creating and showing notifications
  */
-class AlarmReceiver : BroadcastReceiver() {
+class AlarmReceiver : BroadcastReceiver(), KoinComponent {
     companion object {
         // Notification channel ID for Android O and above
         const val CHANNEL_ID = "alarm_channel"
@@ -32,6 +34,8 @@ class AlarmReceiver : BroadcastReceiver() {
         // Tag for logging
         private const val TAG = "AlarmReceiver"
     }
+
+    private val alarmScheduler: AlarmScheduler by inject()
 
     /**
      * Called when the alarm is triggered via device boot or incoming alarm
@@ -43,24 +47,22 @@ class AlarmReceiver : BroadcastReceiver() {
             return
         }
 
+        if (!intent.hasCategory(AlarmSchedulerIntent.CATEGORY_ALARM)) {
+            Timber.e("AlarmReceiver", "Received intent without alarm category")
+            return
+        }
+
         Timber.tag(TAG).d("AlarmReceiver: onReceive triggered with action: ${intent.action}")
 
-        try {
-            // First reschedule the next alarm before showing UI
-            // This ensures we don't miss the next alarm if the app crashes during UI handling
-            rescheduleNextAlarm(context, intent)
+        if (!intent.getBooleanExtra("IS_SNOOZE", false)) {
+            alarmScheduler.cancelAlarmOccurrenceByIntentAction(intent.action.toString())
 
-            startAlarmActivity(context, intent)
-            handleNotification(context, intent)
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Error in AlarmReceiver")
-            // Attempt to reschedule again if we failed earlier
-            try {
-                rescheduleNextAlarm(context, intent)
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "Failed to reschedule alarm after error")
-            }
+            val alarmState = AlarmSchedulerIntent.toAlarmOccurrenceState(intent)
+            alarmScheduler.rescheduleOccurrenceForNextWeek(alarmState)
         }
+
+        startAlarmActivity(context, intent)
+        handleNotification(context, intent)
     }
 
     /**
@@ -230,63 +232,5 @@ class AlarmReceiver : BroadcastReceiver() {
             actionIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-    }
-
-    /**
-     * Schedules the next occurrence of the alarm based on selected days.
-     * This is called immediately when an alarm triggers to ensure the next alarm is set.
-     */
-    private fun rescheduleNextAlarm(context: Context, intent: Intent) {
-        val alarmId = intent.getStringExtra("ALARM_ID")
-        if (alarmId == null) {
-            Timber.tag(TAG).e("Cannot reschedule: missing alarm ID")
-            return
-        }
-
-        // Reconstruct the days configuration from intent extras
-        val days = DaysOfWeek(
-            mo = intent.getBooleanExtra("MO", false),
-            tu = intent.getBooleanExtra("TU", false),
-            we = intent.getBooleanExtra("WE", false),
-            th = intent.getBooleanExtra("TH", false),
-            fr = intent.getBooleanExtra("FR", false),
-            sa = intent.getBooleanExtra("SA", false),
-            su = intent.getBooleanExtra("SU", false)
-        )
-
-        if (!days.hasAnyDaySelected()) {
-            Timber.tag(TAG).d("No days selected for alarm $alarmId, not rescheduling")
-            return
-        }
-
-        // Validate time values
-        val hour = intent.getIntExtra("HOUR", -1)
-        val minute = intent.getIntExtra("MINUTE", -1)
-
-        if (hour == -1 || minute == -1) {
-            Timber.tag(TAG).e("Invalid hour/minute for alarm $alarmId: $hour:$minute")
-            return
-        }
-
-        // Reconstruct the alarm object with all its properties
-        val alarm = Alarm(
-            id = alarmId,
-            hour = hour,
-            minute = minute,
-            title = intent.getStringExtra("TITLE") ?: "",
-            isEnabled = true,
-            selectedDays = days,
-            ringtoneTitle = intent.getStringExtra("ALARM_TITLE") ?: "",
-            ringtoneUri = intent.getStringExtra("ALARM_URI"),
-            volume = intent.getFloatExtra("VOLUME", 0.5f),
-            vibrate = intent.getBooleanExtra("VIBRATE", true)
-        )
-
-        try {
-            AlarmSchedulerImpl(context).schedule(alarm)
-            Timber.tag(TAG).d("Successfully rescheduled alarm $alarmId for ${alarm.hour}:${alarm.minute}")
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Failed to reschedule alarm $alarmId")
-        }
     }
 }

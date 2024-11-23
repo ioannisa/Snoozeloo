@@ -27,7 +27,7 @@ import timber.log.Timber
  * Data class representing the current state of an active alarm
  */
 @Immutable
-data class AlarmState(
+data class AlarmOccurrenceState(
     val isPlaying: Boolean = false,
     val title: String = "",
     val volume: Float = 0.5f,
@@ -56,8 +56,8 @@ class AlarmDismissActivityViewModel(
     }
 
     // UI state management
-    private val _state = MutableStateFlow(AlarmState())
-    val state: StateFlow<AlarmState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(AlarmOccurrenceState())
+    val state: StateFlow<AlarmOccurrenceState> = _state.asStateFlow()
 
     // Media components that need lifecycle management
     private var mediaPlayer: MediaPlayer? = null
@@ -236,7 +236,7 @@ class AlarmDismissActivityViewModel(
             notificationManager.cancel(NOTIFICATION_ID)
 
             if (state.value.alarmId != null && state.value.dayOfWeek != null) {
-                alarmScheduler.scheduleNextWeekOccurrence(state.value)
+                alarmScheduler.rescheduleOccurrenceForNextWeek(state.value)
             }
 
             _state.update { it.copy(isPlaying = false) }

@@ -60,12 +60,20 @@
             android:name=".core.data.AlarmReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="your.package.name.ALARM_TRIGGER" />
+                <category android:name="eu.anifantakis.snoozeloo.category.SCHEDULED_ALARM" />
             </intent-filter>
         </receiver>
 
-    </application>
+        <receiver
+            android:name=".core.data.BootCompletedReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+
+</application>
 
 </manifest>

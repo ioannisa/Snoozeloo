@@ -5,13 +5,16 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
-import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmState
+import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmOccurrenceState
+import eu.anifantakis.snoozeloo.core.data.database.AlarmSchedulerIntent
 import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
 import timber.log.Timber
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 
 /**
  * Implementation of AlarmScheduler that handles scheduling and canceling alarms using Android's AlarmManager.
@@ -82,7 +85,7 @@ class AlarmSchedulerImpl(
             return
         }
 
-        val alarmOccurrence = AlarmState(
+        val alarmOccurrence = AlarmOccurrenceState(
             title = item.title,
             volume = item.volume,
             shouldVibrate = item.vibrate,
@@ -161,41 +164,63 @@ class AlarmSchedulerImpl(
         return Duration.between(now, nextAlarmDateTime)
     }
 
-    override fun scheduleSnooze(alarmState: AlarmState, snoozeDurationMinutes: Long) {
-        val snoozeIntent = createAlarmIntent(alarmState, isSnooze = true)
+    private fun calculateNextWeekTriggerTime(
+        hour: Int,
+        minute: Int,
+        dayOfWeek: DayOfWeek
+    ): Long {
+        val now = LocalDateTime.now()
+        val nextAlarmDateTime = now.with(TemporalAdjusters.next(dayOfWeek))
+            .withHour(hour)
+            .withMinute(minute)
+            .withSecond(0)
+            .withNano(0)
+
+        return nextAlarmDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    }
+
+    override fun scheduleSnooze(alarmOccurrenceState: AlarmOccurrenceState, snoozeDurationMinutes: Long) {
+        val snoozeIntent = createAlarmIntent(alarmOccurrenceState, isSnooze = true)
         val snoozeMillis = System.currentTimeMillis() + snoozeDurationMinutes * 60 * 1000
 
         alarmScheduleAt(snoozeMillis, snoozeIntent, generateUniqueRequestCode())
-        Timber.tag(TAG).d("Scheduled snooze alarm for ${alarmState.title} at $snoozeMillis")
+        Timber.tag(TAG).d("Scheduled snooze alarm for ${alarmOccurrenceState.title} at $snoozeMillis")
     }
 
-    override fun scheduleNextWeekOccurrence(alarmState: AlarmState) {
-        val dayOfWeek = alarmState.dayOfWeek?.let { DayOfWeek.of(it) } ?: return
+    override fun rescheduleOccurrenceForNextWeek(alarmOccurrenceState: AlarmOccurrenceState) {
+        val dayOfWeek = alarmOccurrenceState.dayOfWeek?.let { DayOfWeek.of(it) } ?: return
 
-        val nextWeekTriggerTime = calculateTimeUntilAlarmForDay(
-            alarmState.hour,
-            alarmState.minute,
+        val nextWeekTriggerTime = calculateNextWeekTriggerTime(
+            alarmOccurrenceState.hour,
+            alarmOccurrenceState.minute,
             dayOfWeek
-        ).toMillis()
+        )
 
-        val intent = createAlarmIntent(alarmState)
+        val intent = createAlarmIntent(alarmOccurrenceState)
 
         alarmScheduleAt(nextWeekTriggerTime, intent)
-        Timber.tag(TAG).d("Rescheduled alarm for next week on $dayOfWeek at $nextWeekTriggerTime")
+        Timber.tag(TAG).d("Rescheduled alarm for next week on $dayOfWeek at $nextWeekTriggerTime - action: ${intent.action}")
     }
 
-    private fun createAlarmIntent(alarmState: AlarmState, isSnooze: Boolean = false): Intent {
-        return Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", alarmState.alarmId)
-            putExtra("TITLE", if (isSnooze) "${alarmState.title} (Snoozed)" else alarmState.title)
-            putExtra("VOLUME", alarmState.volume)
-            putExtra("VIBRATE", alarmState.shouldVibrate)
-            putExtra("ALARM_URI", alarmState.ringtoneUri)
-            putExtra("HOUR", alarmState.hour)
-            putExtra("MINUTE", alarmState.minute)
-            putExtra("DAY_OF_WEEK", alarmState.dayOfWeek)
-            action = "eu.anifantakis.snoozeloo.ALARM_${alarmState.alarmId}_${alarmState.dayOfWeek}"
+    private fun createAlarmIntent(alarmOccurrenceState: AlarmOccurrenceState, isSnooze: Boolean = false): AlarmSchedulerIntent {
+        return AlarmSchedulerIntent(context, AlarmReceiver::class.java)
+            .setAlarmData(alarmOccurrenceState, isSnooze)
+    }
+
+    override fun cancelAlarmOccurrenceByIntentAction(action: String) {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            this.action = action
         }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            0, // Same request code used when creating
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
     }
 
     private fun generateUniqueRequestCode(): Int {
