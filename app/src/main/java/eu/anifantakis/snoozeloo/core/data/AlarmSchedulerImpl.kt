@@ -124,7 +124,7 @@ class AlarmSchedulerImpl(
             try {
                 alarmManager.cancel(pendingIntent)
                 pendingIntent.cancel()
-                Timber.tag(TAG).d("Cancelled alarm ${item.id} for $dayOfWeek")
+                Timber.tag(TAG).d("Cancelled alarm ${intent.action} for $dayOfWeek")
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Failed to cancel alarm ${item.id} for $dayOfWeek")
             }
