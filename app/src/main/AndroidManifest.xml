@@ -2,12 +2,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- To reschedule alarms after boot complete -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- To get notified of an alarm trigger -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- To allow turning on the screen when phone lock -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- To display overlay window when alarm triggers -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- To allow alarm vibration -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- To allow notification permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- To allow change alam volume based on alarm sound level preference -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <application

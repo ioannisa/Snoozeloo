@@ -34,7 +34,7 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     /**
-     * Called when the alarm is triggered.
+     * Called when the alarm is triggered via device boot or incoming alarm
      * Handles the complete alarm flow including rescheduling, UI, and notifications.
      */
     override fun onReceive(context: Context?, intent: Intent?) {

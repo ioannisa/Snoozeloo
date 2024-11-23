@@ -15,8 +15,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 
-private const val TAG = "AlarmSchedulerImpl"
-
 /**
  * Implementation of AlarmScheduler that handles scheduling and canceling alarms using Android's AlarmManager.
  * Each alarm can have multiple occurrences (one per selected day of week).
@@ -28,28 +26,43 @@ class AlarmSchedulerImpl(
 
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
+    private fun alarmScheduleAt(nextAlarmMillis: Long, intent: Intent, requestCode: Int = 0) {
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            nextAlarmMillis,
+            pendingIntent
+        )
+    }
+
     /**
      * Schedules an alarm for each selected day of the week.
      * Cancels all existing occurrences first to prevent duplicates.
      */
-    override fun schedule(item: Alarm) {
+    override fun schedule(alarm: Alarm) {
         // First cancel all existing occurrences for this alarm
-        cancelAllOccurrences(item)
+        cancelAllOccurrences(alarm)
 
-        if (!item.isEnabled || !item.selectedDays.hasAnyDaySelected()) {
-            Timber.tag(TAG).d("Alarm ${item.id} not scheduled: enabled=${item.isEnabled}, hasSelectedDays=${item.selectedDays.hasAnyDaySelected()}")
+        if (!alarm.isEnabled || !alarm.selectedDays.hasAnyDaySelected()) {
+            Timber.tag(TAG).d("Alarm ${alarm.id} not scheduled: enabled=${alarm.isEnabled}, hasSelectedDays=${alarm.selectedDays.hasAnyDaySelected()}")
             return
         }
 
         // Schedule for each selected day
-        with(item.selectedDays) {
-            if (mo) scheduleForDay(item, DayOfWeek.MONDAY)
-            if (tu) scheduleForDay(item, DayOfWeek.TUESDAY)
-            if (we) scheduleForDay(item, DayOfWeek.WEDNESDAY)
-            if (th) scheduleForDay(item, DayOfWeek.THURSDAY)
-            if (fr) scheduleForDay(item, DayOfWeek.FRIDAY)
-            if (sa) scheduleForDay(item, DayOfWeek.SATURDAY)
-            if (su) scheduleForDay(item, DayOfWeek.SUNDAY)
+        with(alarm.selectedDays) {
+            if (mo) scheduleForDay(alarm, DayOfWeek.MONDAY)
+            if (tu) scheduleForDay(alarm, DayOfWeek.TUESDAY)
+            if (we) scheduleForDay(alarm, DayOfWeek.WEDNESDAY)
+            if (th) scheduleForDay(alarm, DayOfWeek.THURSDAY)
+            if (fr) scheduleForDay(alarm, DayOfWeek.FRIDAY)
+            if (sa) scheduleForDay(alarm, DayOfWeek.SATURDAY)
+            if (su) scheduleForDay(alarm, DayOfWeek.SUNDAY)
         }
     }
 
@@ -89,23 +102,9 @@ class AlarmSchedulerImpl(
             action = "eu.anifantakis.snoozeloo.ALARM_${item.id}_${dayOfWeek.value}"
         }
 
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + nextAlarmTime.toMillis(),
-                pendingIntent
-            )
-            Timber.tag(TAG).d("Scheduled alarm ${item.id}_${dayOfWeek.value} for $dayOfWeek at ${nextAlarmTime.toMillis()}ms from now")
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Failed to schedule alarm ${item.id} for $dayOfWeek")
-        }
+        val nextAlarmMillis = System.currentTimeMillis() + nextAlarmTime.toMillis()
+        alarmScheduleAt(nextAlarmMillis, intent)
+        Timber.tag(TAG).d("Scheduled alarm ${item.id}_${dayOfWeek.value} for $dayOfWeek at ${nextAlarmTime.toMillis()}ms from now")
     }
 
     /**
@@ -113,7 +112,7 @@ class AlarmSchedulerImpl(
      */
     private fun cancelAllOccurrences(item: Alarm) {
         // Cancel for each day of the week, regardless of whether it was selected
-        DayOfWeek.values().forEach { dayOfWeek ->
+        DayOfWeek.entries.forEach { dayOfWeek ->
             val intent = Intent(context, AlarmReceiver::class.java).apply {
                 // Recreate the unique action
                 action = "eu.anifantakis.snoozeloo.ALARM_${item.id}_${dayOfWeek.value}"
@@ -122,7 +121,7 @@ class AlarmSchedulerImpl(
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
                 0,
-                Intent(context, AlarmReceiver::class.java),
+                intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
@@ -139,8 +138,8 @@ class AlarmSchedulerImpl(
     /**
      * Public cancel method that ensures all occurrences are cancelled.
      */
-    override fun cancel(item: Alarm) {
-        cancelAllOccurrences(item)
+    override fun cancel(alarm: Alarm) {
+        cancelAllOccurrences(alarm)
     }
 
     /**
@@ -173,22 +172,10 @@ class AlarmSchedulerImpl(
 
     override fun scheduleSnooze(alarmState: AlarmState, snoozeDurationMinutes: Long) {
         val snoozeIntent = createAlarmIntent(alarmState, isSnooze = true)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            generateUniqueRequestCode(),
-            snoozeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val snoozeMillis = System.currentTimeMillis() + snoozeDurationMinutes * 60 * 1000
 
-        val triggerTime = System.currentTimeMillis() + snoozeDurationMinutes * 60 * 1000
-
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            triggerTime,
-            pendingIntent
-        )
-
-        Timber.tag(TAG).d("Scheduled snooze alarm for ${alarmState.title} at $triggerTime")
+        alarmScheduleAt(snoozeMillis, snoozeIntent, generateUniqueRequestCode())
+        Timber.tag(TAG).d("Scheduled snooze alarm for ${alarmState.title} at $snoozeMillis")
     }
 
     override fun scheduleNextWeek(alarmState: AlarmState) {
@@ -201,19 +188,8 @@ class AlarmSchedulerImpl(
         )
 
         val intent = createAlarmIntent(alarmState)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            generateUniqueRequestCode(),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            nextWeekTriggerTime,
-            pendingIntent
-        )
-
+        alarmScheduleAt(nextWeekTriggerTime, intent)
         Timber.tag(TAG).d("Rescheduled alarm for next week on $dayOfWeek at $nextWeekTriggerTime")
     }
 
