@@ -12,8 +12,6 @@ import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.ZoneId
-import java.time.temporal.TemporalAdjusters
 
 /**
  * Implementation of AlarmScheduler that handles scheduling and canceling alarms using Android's AlarmManager.
@@ -27,18 +25,22 @@ class AlarmSchedulerImpl(
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
     private fun alarmScheduleAt(nextAlarmMillis: Long, intent: Intent, requestCode: Int = 0) {
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        try {
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            nextAlarmMillis,
-            pendingIntent
-        )
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                nextAlarmMillis,
+                pendingIntent
+            )
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Failed to schedule alarm for intent: ${intent.action}")
+        }
     }
 
     /**
@@ -72,35 +74,26 @@ class AlarmSchedulerImpl(
     private fun scheduleForDay(
         item: Alarm,
         dayOfWeek: DayOfWeek,
-        scheduleForNextWeek: Boolean = false
+
     ) {
-        val nextAlarmTime = calculateTimeUntilAlarmForDay(item.hour, item.minute, dayOfWeek, scheduleForNextWeek)
+        val nextAlarmTime = calculateTimeUntilAlarmForDay(item.hour, item.minute, dayOfWeek)
         if (nextAlarmTime == Duration.ZERO) {
             Timber.tag(TAG).d("No valid next alarm time for alarm ${item.id} on $dayOfWeek")
             return
         }
 
-        val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("ALARM_ID", item.id)
-            putExtra("TITLE", item.title)
-            putExtra("VOLUME", item.volume)
-            putExtra("VIBRATE", item.vibrate)
-            putExtra("ALARM_TITLE", item.ringtoneTitle)
-            putExtra("ALARM_URI", item.ringtoneUri)
-            putExtra("HOUR", item.hour)
-            putExtra("MINUTE", item.minute)
-            putExtra("MO", item.selectedDays.mo)
-            putExtra("TU", item.selectedDays.tu)
-            putExtra("WE", item.selectedDays.we)
-            putExtra("TH", item.selectedDays.th)
-            putExtra("FR", item.selectedDays.fr)
-            putExtra("SA", item.selectedDays.sa)
-            putExtra("SU", item.selectedDays.su)
-            putExtra("DAY_OF_WEEK", dayOfWeek.value) // Store which day this occurrence is for
+        val alarmOccurrence = AlarmState(
+            title = item.title,
+            volume = item.volume,
+            shouldVibrate = item.vibrate,
+            ringtoneUri = item.ringtoneUri,
+            alarmId = item.id,
+            dayOfWeek = dayOfWeek.value, // the occurrence of that alarm in a given day of the week
+            hour = item.hour,
+            minute = item.minute
+        )
 
-            // Set a unique action based on alarmId and dayOfWeek
-            action = "eu.anifantakis.snoozeloo.ALARM_${item.id}_${dayOfWeek.value}"
-        }
+        val intent = createAlarmIntent(alarmOccurrence)
 
         val nextAlarmMillis = System.currentTimeMillis() + nextAlarmTime.toMillis()
         alarmScheduleAt(nextAlarmMillis, intent)
@@ -153,7 +146,6 @@ class AlarmSchedulerImpl(
         hour: Int,
         minute: Int,
         targetDay: DayOfWeek,
-        scheduleForNextWeek: Boolean = false
     ): Duration {
         val now = LocalDateTime.now()
         val alarmTime = LocalTime.of(hour, minute)
@@ -162,13 +154,12 @@ class AlarmSchedulerImpl(
         val daysUntilTargetDay = ((targetDay.value - now.dayOfWeek.value + 7) % 7)
         nextAlarmDateTime = nextAlarmDateTime.plusDays(daysUntilTargetDay.toLong())
 
-        if (scheduleForNextWeek || nextAlarmDateTime.isBefore(now)) {
+        if (nextAlarmDateTime.isBefore(now)) {
             nextAlarmDateTime = nextAlarmDateTime.plusWeeks(1)
         }
 
         return Duration.between(now, nextAlarmDateTime)
     }
-
 
     override fun scheduleSnooze(alarmState: AlarmState, snoozeDurationMinutes: Long) {
         val snoozeIntent = createAlarmIntent(alarmState, isSnooze = true)
@@ -178,14 +169,14 @@ class AlarmSchedulerImpl(
         Timber.tag(TAG).d("Scheduled snooze alarm for ${alarmState.title} at $snoozeMillis")
     }
 
-    override fun scheduleNextWeek(alarmState: AlarmState) {
+    override fun scheduleNextWeekOccurrence(alarmState: AlarmState) {
         val dayOfWeek = alarmState.dayOfWeek?.let { DayOfWeek.of(it) } ?: return
 
-        val nextWeekTriggerTime = calculateNextWeekTriggerTime(
+        val nextWeekTriggerTime = calculateTimeUntilAlarmForDay(
             alarmState.hour,
             alarmState.minute,
             dayOfWeek
-        )
+        ).toMillis()
 
         val intent = createAlarmIntent(alarmState)
 
@@ -205,21 +196,6 @@ class AlarmSchedulerImpl(
             putExtra("DAY_OF_WEEK", alarmState.dayOfWeek)
             action = "eu.anifantakis.snoozeloo.ALARM_${alarmState.alarmId}_${alarmState.dayOfWeek}"
         }
-    }
-
-    private fun calculateNextWeekTriggerTime(
-        hour: Int,
-        minute: Int,
-        dayOfWeek: DayOfWeek
-    ): Long {
-        val now = LocalDateTime.now()
-        val nextAlarmDateTime = now.with(TemporalAdjusters.next(dayOfWeek))
-            .withHour(hour)
-            .withMinute(minute)
-            .withSecond(0)
-            .withNano(0)
-
-        return nextAlarmDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     }
 
     private fun generateUniqueRequestCode(): Int {

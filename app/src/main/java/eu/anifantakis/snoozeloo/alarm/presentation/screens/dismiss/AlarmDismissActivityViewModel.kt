@@ -236,7 +236,7 @@ class AlarmDismissActivityViewModel(
             notificationManager.cancel(NOTIFICATION_ID)
 
             if (state.value.alarmId != null && state.value.dayOfWeek != null) {
-                alarmScheduler.scheduleNextWeek(state.value)
+                alarmScheduler.scheduleNextWeekOccurrence(state.value)
             }
 
             _state.update { it.copy(isPlaying = false) }

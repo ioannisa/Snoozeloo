@@ -7,5 +7,5 @@ interface AlarmScheduler {
     fun schedule(alarm: Alarm)
     fun cancel(alarm: Alarm)
     fun scheduleSnooze(alarmState: AlarmState, snoozeDurationMinutes: Long)
-    fun scheduleNextWeek(alarmState: AlarmState)
+    fun scheduleNextWeekOccurrence(alarmState: AlarmState)
 }
