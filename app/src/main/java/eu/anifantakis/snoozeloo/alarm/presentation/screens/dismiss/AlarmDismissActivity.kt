@@ -26,22 +26,21 @@ class AlarmDismissActivity : ComponentActivity() {
     companion object {
         private const val TAG = "AlarmActivity"
         private const val DEFAULT_VOLUME = 0.5f
+        const val EXTRA_SCREEN_WAS_OFF = "SCREEN_WAS_OFF"
     }
 
     // ViewModel with finish callback for closing the activity
     private val viewModel: AlarmDismissActivityViewModel by viewModel() {
-        parametersOf(this::finish)
+        parametersOf(::finishOverlay)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Timber.tag(TAG).d("AlarmActivity onCreate called")
 
         setupWindow()
         handleScreenWake()
         setupAlarm()
 
-        // Setup the UI using Jetpack Compose
         setContent {
             val alarmState by viewModel.state.collectAsStateWithLifecycle()
 
@@ -49,13 +48,15 @@ class AlarmDismissActivity : ComponentActivity() {
                 AlarmDismissScreen(
                     title = alarmState.title,
                     onSnooze = viewModel::snoozeAlarm,
-                    onDismiss = viewModel::dismissAlarm
+                    onDismiss = viewModel::dismissAlarm,
                 )
             }
         }
 
-        // Now set the window size after setContent
-        setWindowSize()
+        val wasScreenOff = intent?.getBooleanExtra(EXTRA_SCREEN_WAS_OFF, false) ?: false
+
+        // Set window size based on screen state
+        setWindowSize(wasScreenOff)
     }
 
     // Setup window to show over lockscreen and keep screen on
@@ -87,13 +88,16 @@ class AlarmDismissActivity : ComponentActivity() {
         )
     }
 
-    // Set the window size to 90% width and 50% height
-    private fun setWindowSize() {
+    // Set the window size to 90% width and 50% height if screen already in use, 100% otherwise
+    private fun setWindowSize(isFullScreen: Boolean) {
         val displayMetrics = DisplayMetrics()
         windowManager.defaultDisplay.getMetrics(displayMetrics)
-        val width = (displayMetrics.widthPixels * 0.9).toInt()
-        val height = (displayMetrics.heightPixels * 0.5).toInt()
+
+        // 90% width and 50% height for screen-on case
+        val width = (displayMetrics.widthPixels * (if (isFullScreen) 1.0f else 0.9f)).toInt()
+        val height = (displayMetrics.heightPixels * (if (isFullScreen) 1.0f else 0.5f)).toInt()
         window.setLayout(width, height)
+
     }
 
     // Make sure screen turns on and unlocks when alarm triggers
@@ -146,7 +150,9 @@ class AlarmDismissActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         // Prevent the activity from being stopped unless explicitly dismissed
-        moveTaskToFront()
+        if (!isFinishing) {
+            moveTaskToFront()
+        }
     }
 
     // If needed, also prevent recent apps from closing the alarm
@@ -159,6 +165,22 @@ class AlarmDismissActivity : ComponentActivity() {
 
     private fun moveTaskToFront() {
         val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        am.moveTaskToFront(taskId, ActivityManager.MOVE_TASK_WITH_HOME)
+        // Add flag to prevent affecting other tasks
+        am.moveTaskToFront(taskId, ActivityManager.MOVE_TASK_NO_USER_ACTION)
+    }
+
+    private fun finishOverlay() {
+        // Remove window flags to allow proper dismissal
+        window.clearFlags(
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        )
+
+        // Finish only this activity without affecting others
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            finishAndRemoveTask()
+        } else {
+            finish()
+        }
     }
 }

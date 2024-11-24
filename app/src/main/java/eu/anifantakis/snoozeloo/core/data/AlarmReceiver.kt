@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmDismissActivity
@@ -52,6 +53,11 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             return
         }
 
+        // during broadcast, if the screen was off, signal it so we show the overlay in full screen
+        // otherwise if during the broadcast the screen was on, show compact overlay
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wasScreenOff = !powerManager.isInteractive
+
         Timber.tag(TAG).d("AlarmReceiver: onReceive triggered with action: ${intent.action}")
 
         if (!intent.getBooleanExtra("IS_SNOOZE", false)) {
@@ -61,7 +67,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             alarmScheduler.rescheduleOccurrenceForNextWeek(alarmState)
         }
 
-        startAlarmActivity(context, intent)
+        startAlarmActivity(context, intent, wasScreenOff)
         handleNotification(context, intent)
     }
 
@@ -69,13 +75,14 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
      * Launches the full-screen alarm activity.
      * Uses appropriate flags to ensure proper activity stack handling.
      */
-    private fun startAlarmActivity(context: Context, intent: Intent) {
+    private fun startAlarmActivity(context: Context, intent: Intent, wasScreenOff: Boolean) {
         try {
             val fullScreenIntent = Intent(context, AlarmDismissActivity::class.java).apply {
                 // Flags to ensure proper activity launch behavior
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)  // Required for launching from background
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP) // Clear any existing instances
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP) // Reuse existing instance if possible
+                putExtra(AlarmDismissActivity.EXTRA_SCREEN_WAS_OFF, wasScreenOff)
                 putExtras(intent) // Forward all alarm data
             }
             context.startActivity(fullScreenIntent)
