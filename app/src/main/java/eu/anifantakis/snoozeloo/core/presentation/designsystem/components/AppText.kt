@@ -85,6 +85,25 @@ fun AppText16(
 }
 
 @Composable
+fun AppText20(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontWeight: FontWeight = FontWeight.W500,
+    color: Color = MaterialTheme.colorScheme.onSurface
+) {
+    Text(
+        modifier = modifier,
+        text = text,
+        style = textStyle.copy(
+            fontSize = 20.sp,
+            fontWeight = fontWeight,
+            lineHeight = 25.26.sp,
+            color = color
+        ),
+    )
+}
+
+@Composable
 fun AppText24(
     text: String,
     modifier: Modifier = Modifier,

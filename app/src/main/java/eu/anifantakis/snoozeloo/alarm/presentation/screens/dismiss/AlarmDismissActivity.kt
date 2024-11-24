@@ -42,19 +42,20 @@ class AlarmDismissActivity : ComponentActivity() {
         handleScreenWake()
         setupAlarm()
 
+        val wasScreenOff = intent?.getBooleanExtra(EXTRA_SCREEN_WAS_OFF, false) ?: false
+
         setContent {
             val alarmState by viewModel.state.collectAsStateWithLifecycle()
 
             SnoozelooTheme {
                 AlarmDismissScreen(
                     title = alarmState.title,
+                    isFullScreen = wasScreenOff,
                     onSnooze = viewModel::snoozeAlarm,
                     onDismiss = viewModel::dismissAlarm,
                 )
             }
         }
-
-        val wasScreenOff = intent?.getBooleanExtra(EXTRA_SCREEN_WAS_OFF, false) ?: false
 
         // Set window size based on screen state
         setWindowSize(wasScreenOff)
@@ -90,8 +91,8 @@ class AlarmDismissActivity : ComponentActivity() {
 
     // Set the window size to 90% width and 50% height if screen already in use, 100% otherwise
     private fun setWindowSize(isFullScreen: Boolean) {
-        val compactOverlayWidth = 0.9f
-        val compactOverlayHeight = 0.5f
+        val compactOverlayWidth = 0.8f
+        val compactOverlayHeight = 0.45f
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val windowMetrics = windowManager.currentWindowMetrics

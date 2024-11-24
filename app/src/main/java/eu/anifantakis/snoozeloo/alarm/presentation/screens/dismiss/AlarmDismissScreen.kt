@@ -21,10 +21,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils.toTime24String
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppOutlinedActionButton
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText20
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText24
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText52
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText82
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import java.time.LocalTime
@@ -32,6 +35,7 @@ import java.time.LocalTime
 @Composable
 fun AlarmDismissScreen(
     title: String,
+    isFullScreen: Boolean,
     onSnooze: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -47,9 +51,11 @@ fun AlarmDismissScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.Center
         ) {
+
             Column(
+                modifier = Modifier.padding(UIConst.padding),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(if (isFullScreen) UIConst.padding else UIConst.paddingSmall)
             ) {
                 Icon(
                     imageVector = Icons.alarm,
@@ -60,29 +66,43 @@ fun AlarmDismissScreen(
                         .height(55.dp)
                 )
 
-                AppText82(
-                    text = LocalTime.now().toTime24String(),
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                if (isFullScreen) {
+                    AppText82(
+                        text = LocalTime.now().toTime24String(),
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                } else {
+                    AppText52(
+                        text = LocalTime.now().toTime24String(),
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
 
-                AppText24(
-                    text = title,
-                )
-                Spacer(modifier = Modifier.height(32.dp))
+                if (isFullScreen) {
+                    AppText24(text = title)
+                } else {
+                    AppText20(text = title)
+                }
+
+                Spacer(modifier = Modifier.height(if (isFullScreen) UIConst.paddingDouble else UIConst.padding))
 
                 AppActionButton(
                     text = "Snooze",
+                    largeText = false,
                     onClick = onSnooze,
-                    contentPadding = PaddingValues(vertical = 16.dp)
+                    contentPadding = PaddingValues(vertical = if (isFullScreen) 16.dp else 8.dp)
                 )
                 AppOutlinedActionButton(
                     text = "Dismiss",
-                    onClick = onDismiss
+                    largeText = false,
+                    onClick = onDismiss,
+                    contentPadding = PaddingValues(vertical = if (isFullScreen) 8.dp else 0.dp)
                 )
             }
         }
     }
 }
+
 
 @Preview(uiMode = UI_MODE_NIGHT_NO)
 @Preview(uiMode = UI_MODE_NIGHT_YES)
@@ -92,6 +112,7 @@ private fun AlarmDismissScreenPreview() {
         AppBackground {
             AlarmDismissScreen(
                 title = "Wake up!",
+                isFullScreen = true,
                 onSnooze = { },
                 onDismiss = { }
             )

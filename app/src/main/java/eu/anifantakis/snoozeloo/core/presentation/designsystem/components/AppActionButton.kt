@@ -77,25 +77,26 @@ fun AppActionButton(
             }
 
             text?.let {
-                val style =  if (largeText) {
-                    MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
+                if (largeText) {
+                    AppText24(
+                        text = text,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.W700,
+                        modifier = Modifier
+                            .align(Alignment.Center)
                     )
                 } else {
-                    MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
+                    AppText16(
+                        text = text,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.W700,
+                        modifier = Modifier
+                            .align(Alignment.Center)
                     )
                 }
-
-                Text(
-                    text = text,
-                    style = style,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                )
             }
+
+
         }
     }
 }

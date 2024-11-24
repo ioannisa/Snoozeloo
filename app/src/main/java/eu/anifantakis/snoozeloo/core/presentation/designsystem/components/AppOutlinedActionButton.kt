@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,9 +26,10 @@ import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 @Composable
 fun AppOutlinedActionButton(
     text: String,
+    largeText: Boolean = true,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     onClick: () -> Unit
 ) {
     OutlinedButton(
@@ -36,7 +38,6 @@ fun AppOutlinedActionButton(
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = MaterialTheme.colorScheme.primary,
             disabledContentColor = UIConst.grayOutColor(MaterialTheme.colorScheme.primary),
-
         ),
         border = BorderStroke(
             width = 1.dp,
@@ -44,11 +45,11 @@ fun AppOutlinedActionButton(
                 MaterialTheme.colorScheme.primary)
         ),
 
-
         modifier = modifier
-        .clip(RoundedCornerShape(30.dp))
-        .background(UIConst.colorWithAlpha(MaterialTheme.colorScheme.primary)),
+            .clip(RoundedCornerShape(30.dp))
+            .background(UIConst.colorWithAlpha(MaterialTheme.colorScheme.primary)),
 
+        contentPadding =  contentPadding
     ) {
         Box(
             modifier = Modifier
@@ -57,15 +58,21 @@ fun AppOutlinedActionButton(
                 .padding(vertical = 8.dp)
 
         ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
-                modifier = Modifier
-                    .align(Alignment.Center)
-
-            )
+            if (largeText) {
+                AppText24(
+                    text = text,
+                    fontWeight = FontWeight.W700,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                )
+            } else {
+                AppText16(
+                    text = text,
+                    fontWeight = FontWeight.W700,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                )
+            }
         }
     }
 }
@@ -91,6 +98,15 @@ private fun AppOutlinedActionButtonPreview() {
                 Text("enabled: false")
                 AppOutlinedActionButton(
                     text = "Register",
+                    enabled = false,
+                    onClick = {}
+                )
+
+
+                AppOutlinedActionButton(
+                    text = "Register",
+                    largeText = false,
+                    contentPadding = PaddingValues(0.dp),
                     enabled = false,
                     onClick = {}
                 )
