@@ -18,6 +18,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -86,23 +89,24 @@ class AlarmEditViewModel(
                 alarm.selectedDays
             )
 
-            if (timeUntilNextAlarm != Duration.ZERO) {
-                AlarmUiState(
-                    alarm = alarm,
-                    // Calculate time until next alarm trigger, updates every minute
-                    timeUntilNextAlarm = UiText.StringResource( timeUntilNextAlarm.formatTimeUntil()),
-                    // Determine if current state differs from original
-                    hasChanges = originalAlarm?.let { originalAlarm ->
-                        alarm != originalAlarm || alarm.isNewAlarm
-                    } ?: false
-                )
-            }
+            AlarmUiState(
+                alarm = alarm,
+                timeUntilNextAlarm = UiText.StringResource(timeUntilNextAlarm.formatTimeUntil()),
+                hasChanges = originalAlarm?.let { originalAlarm ->
+                    alarm != originalAlarm || alarm.isNewAlarm
+                } ?: false
+            ) to timeUntilNextAlarm  // Pair the state with duration for filtering
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = null
-    ).toComposeState(viewModelScope)
+    }
+        .filterNotNull()  // Filter out null values first
+        .filter { (_, duration) -> duration != Duration.ZERO }  // Filter based on duration
+        .map { (state, _) -> state }  // Keep only the state, drop the duration
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+        .toComposeState(viewModelScope)
 
     // Channel for one-time events (navigation, snackbar messages, etc.)
     private val eventChannel = Channel<AlarmEditorScreenEvent>()
