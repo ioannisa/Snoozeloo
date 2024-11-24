@@ -11,4 +11,16 @@
         <item name="postSplashScreenTheme">@style/Theme.Snoozeloo</item>
     </style>
 
+    <style name="Theme.Snoozeloo.Dialog" parent="Theme.Material3.DayNight.Dialog">
+        <!-- Make the background transparent to avoid default dialog backgrounds -->
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <!-- Ensure the window is floating -->
+        <item name="android:windowIsFloating">true</item>
+        <!-- Disable dimming of the background -->
+        <item name="android:backgroundDimEnabled">true</item>
+        <!-- Optional: Remove default padding/margins -->
+        <item name="android:windowMinWidthMajor">0%</item>
+        <item name="android:windowMinWidthMinor">0%</item>
+    </style>
+
 </resources>

@@ -1,5 +1,6 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss
 
+import android.app.ActivityManager
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
@@ -7,6 +8,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.DisplayMetrics
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -51,6 +53,9 @@ class AlarmDismissActivity : ComponentActivity() {
                 )
             }
         }
+
+        // Now set the window size after setContent
+        setWindowSize()
     }
 
     // Setup window to show over lockscreen and keep screen on
@@ -66,6 +71,29 @@ class AlarmDismissActivity : ComponentActivity() {
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.attributes.format = PixelFormat.TRANSLUCENT
+
+        // Ensure the window background is transparent to display rounded corners
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+        )
+    }
+
+    // Set the window size to 90% width and 50% height
+    private fun setWindowSize() {
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        val width = (displayMetrics.widthPixels * 0.9).toInt()
+        val height = (displayMetrics.heightPixels * 0.5).toInt()
+        window.setLayout(width, height)
     }
 
     // Make sure screen turns on and unlocks when alarm triggers
@@ -107,12 +135,30 @@ class AlarmDismissActivity : ComponentActivity() {
         }
     }
 
-
     // Handle new intents (e.g., when snooze triggers)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Timber.tag(TAG).d("AlarmActivity onNewIntent with action: ${intent.action}")
         setIntent(intent)
         setupAlarm()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Prevent the activity from being stopped unless explicitly dismissed
+        moveTaskToFront()
+    }
+
+    // If needed, also prevent recent apps from closing the alarm
+    override fun onPause() {
+        super.onPause()
+        if (!isFinishing) {
+            moveTaskToFront()
+        }
+    }
+
+    private fun moveTaskToFront() {
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        am.moveTaskToFront(taskId, ActivityManager.MOVE_TASK_WITH_HOME)
     }
 }
