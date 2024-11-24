@@ -1,5 +1,6 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.KeyguardManager
 import android.content.Context
@@ -60,6 +61,7 @@ class AlarmDismissActivity : ComponentActivity() {
     }
 
     // Setup window to show over lockscreen and keep screen on
+    @SuppressLint("ObsoleteSdkInt") // Unnecessary SDK CHECK, it is >= 26 (but keep it for academic reasons)
     private fun setupWindow() {
         if (Settings.canDrawOverlays(this)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -79,25 +81,37 @@ class AlarmDismissActivity : ComponentActivity() {
         window.setFlags(
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
                     WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
                     WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         )
     }
 
     // Set the window size to 90% width and 50% height if screen already in use, 100% otherwise
     private fun setWindowSize(isFullScreen: Boolean) {
-        val displayMetrics = DisplayMetrics()
-        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        val compactOverlayWidth = 0.9f
+        val compactOverlayHeight = 0.5f
 
-        // 90% width and 50% height for screen-on case
-        val width = (displayMetrics.widthPixels * (if (isFullScreen) 1.0f else 0.9f)).toInt()
-        val height = (displayMetrics.heightPixels * (if (isFullScreen) 1.0f else 0.5f)).toInt()
-        window.setLayout(width, height)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val windowMetrics = windowManager.currentWindowMetrics
+            val width = (windowMetrics.bounds.width() * (if (isFullScreen) 1.0f else compactOverlayWidth)).toInt()
+            val height = (windowMetrics.bounds.height() * (if (isFullScreen) 1.0f else compactOverlayHeight)).toInt()
+            window.setLayout(width, height)
+        } else {
+            val displayMetrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(displayMetrics)
 
+            val width = (displayMetrics.widthPixels * (if (isFullScreen) 1.0f else compactOverlayWidth)).toInt()
+            val height = (displayMetrics.heightPixels * (if (isFullScreen) 1.0f else compactOverlayHeight)).toInt()
+            window.setLayout(width, height)
+        }
+
+        // Center the window
+        window.attributes = window.attributes.apply {
+            gravity = android.view.Gravity.CENTER
+        }
     }
 
     // Make sure screen turns on and unlocks when alarm triggers
@@ -169,6 +183,7 @@ class AlarmDismissActivity : ComponentActivity() {
         am.moveTaskToFront(taskId, ActivityManager.MOVE_TASK_NO_USER_ACTION)
     }
 
+    @SuppressLint("ObsoleteSdkInt") // Unnecessary SDK CHECK, it is >= 26 (but keep it for academic reasons)
     private fun finishOverlay() {
         // Remove window flags to allow proper dismissal
         window.clearFlags(
