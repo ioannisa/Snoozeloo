@@ -73,7 +73,6 @@ class AlarmDismissActivity : ComponentActivity() {
             }
         }
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.attributes.format = PixelFormat.TRANSLUCENT
 
         // Ensure the window background is transparent to display rounded corners
