@@ -150,6 +150,9 @@ class AlarmSchedulerImpl(
         minute: Int,
         targetDay: DayOfWeek,
     ): Duration {
+
+        //return Duration.ofSeconds(5L)
+
         val now = LocalDateTime.now()
         val alarmTime = LocalTime.of(hour, minute)
         var nextAlarmDateTime = LocalDateTime.of(now.toLocalDate(), alarmTime)

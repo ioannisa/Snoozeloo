@@ -21,6 +21,9 @@ fun calculateTimeUntilNextAlarm(
     minute: Int,
     daysOfWeek: DaysOfWeek
 ): Duration {
+
+    //return Duration.ofSeconds(5L)
+
     // If no days are selected, return zero duration
     if (!daysOfWeek.hasAnyDaySelected()) {
         return Duration.ZERO
@@ -49,6 +52,7 @@ fun calculateTimeUntilNextAlarm(
                 DayOfWeek.FRIDAY -> daysOfWeek.fr
                 DayOfWeek.SATURDAY -> daysOfWeek.sa
                 DayOfWeek.SUNDAY -> daysOfWeek.su
+                else -> return Duration.ZERO
             }) {
             return Duration.between(now, nextAlarmDateTime)
         }

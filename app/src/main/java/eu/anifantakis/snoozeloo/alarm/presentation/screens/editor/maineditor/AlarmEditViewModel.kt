@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Duration
 
 sealed interface AlarmEditorScreenAction {
     data class UpdateAlarmTime(val hour: Int, val minute: Int): AlarmEditorScreenAction
@@ -79,20 +80,23 @@ class AlarmEditViewModel(
         minuteTicker
     ) { currentAlarm, _ ->
         currentAlarm?.let { alarm ->
-            AlarmUiState(
-                alarm = alarm,
-                // Calculate time until next alarm trigger, updates every minute
-                timeUntilNextAlarm = UiText.StringResource(calculateTimeUntilNextAlarm(
-                    alarm.hour,
-                    alarm.minute,
-                    alarm.selectedDays
-                ).formatTimeUntil()),
-
-                // Determine if current state differs from original
-                hasChanges = originalAlarm?.let { originalAlarm ->
-                    alarm != originalAlarm || alarm.isNewAlarm
-                } ?: false
+            val timeUntilNextAlarm = calculateTimeUntilNextAlarm(
+                alarm.hour,
+                alarm.minute,
+                alarm.selectedDays
             )
+
+            if (timeUntilNextAlarm != Duration.ZERO) {
+                AlarmUiState(
+                    alarm = alarm,
+                    // Calculate time until next alarm trigger, updates every minute
+                    timeUntilNextAlarm = UiText.StringResource( timeUntilNextAlarm.formatTimeUntil()),
+                    // Determine if current state differs from original
+                    hasChanges = originalAlarm?.let { originalAlarm ->
+                        alarm != originalAlarm || alarm.isNewAlarm
+                    } ?: false
+                )
+            }
         }
     }.stateIn(
         scope = viewModelScope,
