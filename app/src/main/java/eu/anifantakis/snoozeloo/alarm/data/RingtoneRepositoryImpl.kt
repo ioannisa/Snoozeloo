@@ -8,20 +8,44 @@ import eu.anifantakis.snoozeloo.alarm.domain.RingtoneRepository
 import kotlinx.coroutines.delay
 import timber.log.Timber
 
+/**
+ * Implementation of [RingtoneRepository] that manages system ringtones.
+ * Handles ringtone discovery, playback, and system audio integration.
+ *
+ * Key features:
+ * - Lists available system ringtones and alarms
+ * - Manages ringtone playback with preview duration
+ * - Handles fallback paths for unavailable sounds
+ * - Maintains playback state
+ *
+ * @property context Application context for accessing system services
+ */
 class RingtoneRepositoryImpl(
     private val context: Context
 ) : RingtoneRepository {
 
+    // Playback state management
     private var currentRingtone: Ringtone? = null
     private var currentUri: Uri? = null
     private var isPlaying: Boolean = false
 
+    /**
+     * Retrieves all available ringtones from the system.
+     * Combines alarm sounds and general ringtones into a single list.
+     *
+     * Process:
+     * 1. Gets system default alarm
+     * 2. Adds all alarm-specific sounds
+     * 3. Adds general ringtones as additional options
+     *
+     * @return List of ringtone title and URI pairs, empty if access fails
+     */
     override fun getAllRingtones(): List<Pair<String, Uri>> {
         return try {
             val defaultAlarm = getSystemDefaultAlarmRingtone()
-            val ringtoneList = mutableListOf(defaultAlarm) // Add default alarm first
+            val ringtoneList = mutableListOf(defaultAlarm) // Start with default alarm
 
-            // Then add other alarm ringtones
+            // Add alarm-specific ringtones
             RingtoneManager(context).run {
                 setType(RingtoneManager.TYPE_ALARM)
                 cursor.use { cursor ->
@@ -29,7 +53,7 @@ class RingtoneRepositoryImpl(
                         try {
                             val title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX)
                             val uri = getRingtoneUri(cursor.position)
-                            // Only add if it's not the default alarm (to avoid duplicates)
+                            // Avoid duplicate of default alarm
                             if (uri != defaultAlarm.second) {
                                 ringtoneList.add(title to uri)
                             }
@@ -41,7 +65,7 @@ class RingtoneRepositoryImpl(
                 }
             }
 
-            // Also add general ringtones (as they can be used for alarms too)
+            // Add general ringtones as additional options
             RingtoneManager(context).run {
                 setType(RingtoneManager.TYPE_RINGTONE)
                 cursor.use { cursor ->
@@ -65,36 +89,49 @@ class RingtoneRepositoryImpl(
         }
     }
 
+    /**
+     * Gets the system's default alarm ringtone with fallback options.
+     * Falls back to notification sound, then general ringtone if alarm sound unavailable.
+     *
+     * @return Pair of ringtone title and URI
+     */
     override fun getSystemDefaultAlarmRingtone(): Pair<String, Uri> {
         return try {
+            // Try alarm sound first
             val defaultUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             val ringtone = RingtoneManager.getRingtone(context, defaultUri)
             val title = ringtone?.getTitle(context)?.let { "$it (Default)" } ?: "Default Alarm"
             title to defaultUri
         } catch (e: Exception) {
             Timber.e(e, "Failed to get system default alarm ringtone")
-            // Fallback to notification sound if alarm sound isn't available
             try {
+                // Fallback to notification sound
                 val fallbackUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 val fallbackRingtone = RingtoneManager.getRingtone(context, fallbackUri)
                 val title = fallbackRingtone?.getTitle(context)?.let { "$it (Default)" } ?: "Default Notification"
                 title to fallbackUri
             } catch (e: Exception) {
                 Timber.e(e, "Failed to get fallback notification sound")
+                // Final fallback to any ringtone
                 "Default Ringtone" to RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
             }
         }
     }
 
+    /**
+     * Plays a ringtone for preview duration.
+     * Handles stopping current playback and managing playback state.
+     *
+     * @param uri URI of the ringtone to play, null to stop playback
+     */
     override suspend fun play(uri: Uri?) {
         try {
-            // If the same ringtone is currently playing, stop it
+            // Toggle playback if same ringtone
             if (uri == currentUri && isPlaying) {
                 stopPlaying()
                 return
             }
 
-            // Stop any previously playing ringtone
             stopPlaying()
 
             uri?.let {
@@ -105,9 +142,10 @@ class RingtoneRepositoryImpl(
                     newRingtone.play()
                 } ?: return
 
+                // Play for preview duration
                 delay(PLAY_DURATION_MS)
 
-                // Stop if still playing after the delay
+                // Stop if still the active playback
                 if (isPlaying && ringtone.isPlaying) {
                     ringtone.stop()
                     isPlaying = false
@@ -119,6 +157,9 @@ class RingtoneRepositoryImpl(
         }
     }
 
+    /**
+     * Stops current ringtone playback and cleans up state.
+     */
     override suspend fun stopPlaying() {
         try {
             currentRingtone?.takeIf { it.isPlaying }?.stop()
@@ -131,6 +172,6 @@ class RingtoneRepositoryImpl(
     }
 
     companion object {
-        private const val PLAY_DURATION_MS = 5000L
+        private const val PLAY_DURATION_MS = 5000L  // 5 second preview
     }
 }
