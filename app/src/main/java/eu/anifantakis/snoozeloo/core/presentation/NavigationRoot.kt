@@ -32,18 +32,35 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.reflect.typeOf
 
+/**
+ * Sealed interface defining the navigation destinations in the app.
+ * Uses Serializable for type-safe navigation arguments.
+ */
 sealed interface NavGraph {
     @Serializable data object Alarms: NavGraph
     @Serializable data class AlarmEditor(val alarm: Alarm): NavGraph
     @Serializable data class RingtoneSetting(val alarmToneUri: String?): NavGraph
 }
 
+/**
+ * Root navigation composable that sets up the navigation graph and handles screen transitions.
+ * Manages navigation state and data passing between screens.
+ *
+ * Key features:
+ * - Type-safe navigation using sealed interface
+ * - Handles custom navigation types (Alarm)
+ * - Manages data flow between screens
+ *
+ * @param innerPadding Padding values from scaffold
+ * @param navController Navigation controller for managing navigation
+ */
 @Composable
 fun NavigationRoot(
     innerPadding: PaddingValues,
     navController: NavHostController,
 ) {
-    // State to hold navigation results
+    // State holder for passing ringtone selection results back to editor
+    // This approach allows passing data back without using SavedStateHandle
     var ringtoneSelectionResult by remember { mutableStateOf<Pair<String, String?>?>(null) }
 
     AppScreen {
@@ -64,6 +81,7 @@ fun NavigationRoot(
                         )
                     )
             ) {
+                // Alarms list screen
                 composable<NavGraph.Alarms>(
                     typeMap = mapOf(typeOf<Alarm>() to NavType.mapper<Alarm>())
                 ) {
@@ -72,19 +90,20 @@ fun NavigationRoot(
                     })
                 }
 
+                // Alarm editor screen
                 composable<NavGraph.AlarmEditor>(
-                    // with NavTypeParcelableHelperLibrary this is the only line required to pass a parcelable
                     typeMap = mapOf(typeOf<Alarm>() to NavType.mapper<Alarm>())
                 ) {
                     val alarm = it.toRoute<NavGraph.AlarmEditor>().alarm
                     val viewModel: AlarmEditViewModel = koinViewModel(parameters = { parametersOf(alarm) })
 
-                    // Pass the result to AlarmEditScreen when returning from RingtoneSetting
+                    // Handle ringtone selection result
+                    // When returning from ringtone selection, update the editor's state
                     ringtoneSelectionResult?.let { (title, uri) ->
                         LaunchedEffect(title, uri) {
-                            // Clear the result after consuming it
+                            // Clear the result after consuming to prevent re-processing
                             ringtoneSelectionResult = null
-                            // Update the ViewModel with both title and URI
+                            // Update editor with selected ringtone
                             viewModel.onAction(AlarmEditorScreenAction.UpdateRingtoneResult(title, uri))
                         }
                     }
@@ -100,6 +119,7 @@ fun NavigationRoot(
                     )
                 }
 
+                // Ringtone selection screen
                 composable<NavGraph.RingtoneSetting> {
                     val args = it.toRoute<NavGraph.RingtoneSetting>()
                     val alarmToneUri = args.alarmToneUri
@@ -107,7 +127,8 @@ fun NavigationRoot(
                     AlarmToneSettingScreenRoot(
                         alarmToneUri = alarmToneUri,
                         onGoBack = { title, selectedUri ->
-                            // Store both title and URI as a Pair
+                            // Store selection result in navigation root state
+                            // This will be picked up by the editor screen when we return
                             ringtoneSelectionResult = Pair(title, selectedUri)
                             navController.popBackStack()
                         }
