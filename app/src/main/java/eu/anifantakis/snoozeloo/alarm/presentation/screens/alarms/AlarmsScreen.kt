@@ -2,29 +2,11 @@ package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,14 +18,17 @@ import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.AlarmUiState
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppScreenWithFAB
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppSwitch
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText16
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText24
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.*
 import eu.anifantakis.snoozeloo.core.presentation.ui.ObserveAsEvents
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
+/**
+ * Root composable for the alarms list screen. Handles event observation and snackbar displays.
+ *
+ * @param onOpenAlarmEditor Callback for navigating to alarm editor
+ * @param viewModel ViewModel handling the screen's logic
+ */
 @Composable
 fun AlarmsScreenRoot(
     onOpenAlarmEditor: (alarm: Alarm) -> Unit,
@@ -53,12 +38,12 @@ fun AlarmsScreenRoot(
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
+    // Handle screen events (navigation and snackbar displays)
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is AlarmsScreenEvent.OnOpenAlarmEditorFor -> {
                 onOpenAlarmEditor(event.alarm)
             }
-
             is AlarmsScreenEvent.OnShowSnackBar -> {
                 scope.launch {
                     snackbarHostState.showSnackbar(
@@ -71,6 +56,7 @@ fun AlarmsScreenRoot(
         }
     }
 
+    // Main screen layout with snackbar host
     Box {
         AlarmsScreen(
             state = viewModel.state,
@@ -84,15 +70,16 @@ fun AlarmsScreenRoot(
     }
 }
 
+/**
+ * Main alarms screen composable with FAB for adding new alarms.
+ */
 @Composable
 private fun AlarmsScreen(
     state: AlarmsScreenState,
     onAction: (AlarmsScreenAction) -> Unit
 ) {
     AppScreenWithFAB(
-        onFabClick = {
-            onAction(AlarmsScreenAction.AddNewAlarm)
-        }
+        onFabClick = { onAction(AlarmsScreenAction.AddNewAlarm) }
     ) {
         AlarmsListScreen(
             alarms = state.alarms,
@@ -102,6 +89,10 @@ private fun AlarmsScreen(
     }
 }
 
+/**
+ * Displays the list of alarms with a header containing the time format toggle.
+ * Shows an empty state when no alarms are present.
+ */
 @Composable
 private fun AlarmsListScreen(
     alarms: List<AlarmUiState>,
@@ -109,6 +100,7 @@ private fun AlarmsListScreen(
     onEvent: (AlarmsScreenAction) -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = UIConst.padding)) {
+        // Header with title and time format switch
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -120,6 +112,7 @@ private fun AlarmsListScreen(
                 modifier = Modifier.padding(vertical = UIConst.padding)
             )
 
+            // Time format toggle switch (12/24 hour)
             AppSwitch(
                 width = 90,
                 height = 45,
@@ -137,6 +130,7 @@ private fun AlarmsListScreen(
             )
         }
 
+        // Empty state display
         if (alarms.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -160,6 +154,7 @@ private fun AlarmsListScreen(
             }
         }
 
+        // Alarm list with swipeable items
         LazyColumn {
             items(
                 items = alarms,
@@ -177,6 +172,10 @@ private fun AlarmsListScreen(
     }
 }
 
+/**
+ * Individual alarm item with swipe-to-delete functionality.
+ * Swipe threshold is set to 50% of the total possible swipe distance.
+ */
 @Composable
 private fun SwipeableAlarmItem(
     alarmUiState: AlarmUiState,
@@ -189,6 +188,7 @@ private fun SwipeableAlarmItem(
         positionalThreshold = { totalDistance -> totalDistance * 0.5f }
     )
 
+    // Trigger deletion when swipe reaches threshold
     LaunchedEffect(dismissState.currentValue) {
         if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
             onDelete()
@@ -198,6 +198,7 @@ private fun SwipeableAlarmItem(
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
+            // Delete icon shown during swipe
             Box(
                 modifier = Modifier
                     .fillMaxSize()

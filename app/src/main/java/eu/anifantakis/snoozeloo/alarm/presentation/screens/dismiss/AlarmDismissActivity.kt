@@ -22,15 +22,23 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 
-// Activity that shows when alarm is triggered
+/**
+ * Activity that displays an overlay when an alarm triggers.
+ * Features:
+ * - Shows as overlay above other apps and lock screen
+ * - Adapts size based on screen state (full screen when screen was off)
+ * - Prevents accidental dismissal through recent apps
+ * - Handles screen wake and keyguard dismissal
+ * - Supports snooze and dismiss actions from both UI and notification
+ */
 class AlarmDismissActivity : ComponentActivity() {
     companion object {
         private const val TAG = "AlarmActivity"
         private const val DEFAULT_VOLUME = 0.5f
-        const val EXTRA_SCREEN_WAS_OFF = "SCREEN_WAS_OFF"
+        const val EXTRA_SCREEN_WAS_OFF = "SCREEN_WAS_OFF" // Used to determine overlay size
     }
 
-    // ViewModel with finish callback for closing the activity
+    // ViewModel with callback for activity finish
     private val viewModel: AlarmDismissActivityViewModel by viewModel() {
         parametersOf(::finishOverlay)
     }
@@ -44,6 +52,7 @@ class AlarmDismissActivity : ComponentActivity() {
 
         val wasScreenOff = intent?.getBooleanExtra(EXTRA_SCREEN_WAS_OFF, false) ?: false
 
+        // Set up the UI with Compose
         setContent {
             val alarmState by viewModel.state.collectAsStateWithLifecycle()
 
@@ -57,13 +66,16 @@ class AlarmDismissActivity : ComponentActivity() {
             }
         }
 
-        // Set window size based on screen state
         setWindowSize(wasScreenOff)
     }
 
-    // Setup window to show over lockscreen and keep screen on
-    @SuppressLint("ObsoleteSdkInt") // Unnecessary SDK CHECK, it is >= 26 (but keep it for academic reasons)
+    /**
+     * Configures window to display as an overlay above other apps.
+     * Sets up transparency and flags for proper overlay behavior.
+     */
+    @SuppressLint("ObsoleteSdkInt")
     private fun setupWindow() {
+        // Set window type based on permission and API level
         if (Settings.canDrawOverlays(this)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 window.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
@@ -73,11 +85,11 @@ class AlarmDismissActivity : ComponentActivity() {
             }
         }
 
+        // Enable transparency for rounded corners
         window.attributes.format = PixelFormat.TRANSLUCENT
-
-        // Ensure the window background is transparent to display rounded corners
         window.setBackgroundDrawableResource(android.R.color.transparent)
 
+        // Set window behavior flags
         window.setFlags(
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -88,11 +100,15 @@ class AlarmDismissActivity : ComponentActivity() {
         )
     }
 
-    // Set the window size to 90% width and 50% height if screen already in use, 100% otherwise
+    /**
+     * Adjusts window size based on whether screen was off when alarm triggered.
+     * Full screen if screen was off, compact overlay if screen was in use.
+     */
     private fun setWindowSize(isFullScreen: Boolean) {
-        val compactOverlayWidth = 0.8f
-        val compactOverlayHeight = 0.45f
+        val compactOverlayWidth = 0.8f  // 80% of screen width for compact mode
+        val compactOverlayHeight = 0.45f // 45% of screen height for compact mode
 
+        // Get screen dimensions using appropriate API
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val windowMetrics = windowManager.currentWindowMetrics
             val width = (windowMetrics.bounds.width() * (if (isFullScreen) 1.0f else compactOverlayWidth)).toInt()
@@ -108,13 +124,16 @@ class AlarmDismissActivity : ComponentActivity() {
             window.setLayout(width, height)
         }
 
-        // Center the window
+        // Center the overlay on screen
         window.attributes = window.attributes.apply {
             gravity = android.view.Gravity.CENTER
         }
     }
 
-    // Make sure screen turns on and unlocks when alarm triggers
+    /**
+     * Ensures screen turns on and keyguard is dismissed when alarm triggers.
+     * Handles this differently based on API level.
+     */
     private fun handleScreenWake() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
@@ -131,9 +150,13 @@ class AlarmDismissActivity : ComponentActivity() {
         }
     }
 
-    // Get alarm data from intent and start/snooze/dismiss based on action
+    /**
+     * Processes alarm data from intent and initiates appropriate action
+     * (start/snooze/dismiss) based on the intent's action.
+     */
     private fun setupAlarm() {
         lifecycleScope.launch {
+            // Extract alarm data from intent
             viewModel.updateAlarmData(
                 title = intent?.getStringExtra("TITLE") ?: "Alarm",
                 volume = intent?.getFloatExtra("VOLUME", DEFAULT_VOLUME) ?: DEFAULT_VOLUME,
@@ -145,6 +168,7 @@ class AlarmDismissActivity : ComponentActivity() {
                 minute = intent?.getIntExtra("MINUTE", 0) ?: 0
             )
 
+            // Handle action from intent (e.g., from notification)
             when (intent?.action) {
                 "DISMISS_ALARM" -> viewModel.dismissAlarm()
                 "SNOOZE_ALARM" -> viewModel.snoozeAlarm()
@@ -153,7 +177,6 @@ class AlarmDismissActivity : ComponentActivity() {
         }
     }
 
-    // Handle new intents (e.g., when snooze triggers)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Timber.tag(TAG).d("AlarmActivity onNewIntent with action: ${intent.action}")
@@ -161,15 +184,17 @@ class AlarmDismissActivity : ComponentActivity() {
         setupAlarm()
     }
 
+    /**
+     * Prevents activity from being stopped unless explicitly dismissed.
+     * Keeps alarm visible even if user tries to switch apps.
+     */
     override fun onStop() {
         super.onStop()
-        // Prevent the activity from being stopped unless explicitly dismissed
         if (!isFinishing) {
             moveTaskToFront()
         }
     }
 
-    // If needed, also prevent recent apps from closing the alarm
     override fun onPause() {
         super.onPause()
         if (!isFinishing) {
@@ -179,19 +204,20 @@ class AlarmDismissActivity : ComponentActivity() {
 
     private fun moveTaskToFront() {
         val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        // Add flag to prevent affecting other tasks
         am.moveTaskToFront(taskId, ActivityManager.MOVE_TASK_NO_USER_ACTION)
     }
 
-    @SuppressLint("ObsoleteSdkInt") // Unnecessary SDK CHECK, it is >= 26 (but keep it for academic reasons)
+    /**
+     * Properly cleans up and finishes the activity when alarm is dismissed.
+     */
+    @SuppressLint("ObsoleteSdkInt")
     private fun finishOverlay() {
-        // Remove window flags to allow proper dismissal
+        // Clear flags that might prevent proper dismissal
         window.clearFlags(
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
         )
 
-        // Finish only this activity without affecting others
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             finishAndRemoveTask()
         } else {

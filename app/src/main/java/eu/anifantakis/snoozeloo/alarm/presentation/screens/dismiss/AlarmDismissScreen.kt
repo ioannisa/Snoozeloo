@@ -2,14 +2,7 @@ package eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,16 +15,20 @@ import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils.toTime24String
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppOutlinedActionButton
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText20
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText24
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText52
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText82
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.*
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import java.time.LocalTime
 
+/**
+ * Screen shown when an alarm is triggered.
+ * Displays current time, alarm title, and snooze/dismiss actions.
+ * Adapts its layout based on whether it's shown full screen or as a compact overlay.
+ *
+ * @param title The alarm's title to display
+ * @param isFullScreen Whether to show full screen layout (true) or compact overlay (false)
+ * @param onSnooze Callback for snooze action
+ * @param onDismiss Callback for dismiss action
+ */
 @Composable
 fun AlarmDismissScreen(
     title: String,
@@ -39,24 +36,29 @@ fun AlarmDismissScreen(
     onSnooze: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    // Main surface with rounded corners and elevation
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
         shape = RoundedCornerShape(24.dp),
         tonalElevation = 8.dp
     ) {
+        // Center all content vertically
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
             verticalArrangement = Arrangement.Center
         ) {
-
+            // Content column with adaptive spacing
             Column(
                 modifier = Modifier.padding(UIConst.padding),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(if (isFullScreen) UIConst.padding else UIConst.paddingSmall)
+                verticalArrangement = Arrangement.spacedBy(
+                    if (isFullScreen) UIConst.padding else UIConst.paddingSmall
+                )
             ) {
+                // Alarm icon
                 Icon(
                     imageVector = Icons.alarm,
                     contentDescription = "Logo",
@@ -66,6 +68,7 @@ fun AlarmDismissScreen(
                         .height(55.dp)
                 )
 
+                // Current time display - larger in full screen
                 if (isFullScreen) {
                     AppText82(
                         text = LocalTime.now().toTime24String(),
@@ -78,32 +81,46 @@ fun AlarmDismissScreen(
                     )
                 }
 
+                // Alarm title - larger in full screen
                 if (isFullScreen) {
                     AppText24(text = title)
                 } else {
                     AppText20(text = title)
                 }
 
-                Spacer(modifier = Modifier.height(if (isFullScreen) UIConst.paddingDouble else UIConst.padding))
+                // Spacing before buttons
+                Spacer(
+                    modifier = Modifier.height(
+                        if (isFullScreen) UIConst.paddingDouble else UIConst.padding
+                    )
+                )
 
+                // Action buttons
                 AppActionButton(
                     text = "Snooze",
                     largeText = false,
                     onClick = onSnooze,
-                    contentPadding = PaddingValues(vertical = if (isFullScreen) 16.dp else 8.dp)
+                    contentPadding = PaddingValues(
+                        vertical = if (isFullScreen) 16.dp else 8.dp
+                    )
                 )
                 AppOutlinedActionButton(
                     text = "Dismiss",
                     largeText = false,
                     onClick = onDismiss,
-                    contentPadding = PaddingValues(vertical = if (isFullScreen) 8.dp else 0.dp)
+                    contentPadding = PaddingValues(
+                        vertical = if (isFullScreen) 8.dp else 0.dp
+                    )
                 )
             }
         }
     }
 }
 
-
+/**
+ * Preview for the alarm dismiss screen in both light and dark modes.
+ * Shows the full screen version of the layout.
+ */
 @Preview(uiMode = UI_MODE_NIGHT_NO)
 @Preview(uiMode = UI_MODE_NIGHT_YES)
 @Composable

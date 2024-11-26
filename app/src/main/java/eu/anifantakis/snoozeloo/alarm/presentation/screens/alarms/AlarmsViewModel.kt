@@ -1,10 +1,6 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms
 
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.anifantakis.lib.securepersist.PersistManager
@@ -14,25 +10,19 @@ import eu.anifantakis.snoozeloo.alarm.domain.AlarmsRepository
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.AlarmUiState
 import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
-import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
-import eu.anifantakis.snoozeloo.core.domain.util.calculateTimeUntilNextAlarm
-import eu.anifantakis.snoozeloo.core.domain.util.formatTimeUntil
+import eu.anifantakis.snoozeloo.core.domain.util.*
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 /**
- * Represents the UI state for the alarms screen.
+ * Immutable UI state for the alarms list screen.
  *
- * @property alarms List of alarm UI states to be displayed
- * @property selectedAlarm Currently selected alarm for editing, if any
- * @property use24HourFormat Whether to use 24-hour time format
+ * @property alarms List of alarms with their UI representation
+ * @property selectedAlarm Currently selected alarm for editing (null if none selected)
+ * @property use24HourFormat User preference for time format display
  */
 @Immutable
 data class AlarmsScreenState(
@@ -42,8 +32,8 @@ data class AlarmsScreenState(
 )
 
 /**
- * Sealed interface defining all possible actions that can be performed on the alarms screen.
- * Each action represents a unique user interaction or system event that requires processing.
+ * Actions that can be triggered by user interactions or system events.
+ * Each action represents a distinct operation on the alarm list.
  */
 sealed interface AlarmsScreenAction {
     data object AddNewAlarm : AlarmsScreenAction
@@ -56,8 +46,7 @@ sealed interface AlarmsScreenAction {
 }
 
 /**
- * Sealed interface defining one-time events that should be handled by the UI.
- * These events typically represent navigation or user notifications.
+ * One-time events that should trigger UI updates or navigation.
  */
 sealed interface AlarmsScreenEvent {
     data class OnOpenAlarmEditorFor(val alarm: Alarm): AlarmsScreenEvent
@@ -65,12 +54,17 @@ sealed interface AlarmsScreenEvent {
 }
 
 /**
- * ViewModel responsible for managing the alarm list screen state and user interactions.
- * Handles alarm creation, modification, deletion, and time format preferences.
+ * ViewModel for the alarms list screen, handling alarm management and UI state.
  *
- * @property repository Repository for alarm data operations
- * @property alarmScheduler Scheduler for managing alarm notifications
- * @property persistManager Manager for persistent preferences
+ * Key responsibilities:
+ * - Maintains and updates the list of alarms
+ * - Handles user interactions through actions
+ * - Manages time format preferences
+ * - Coordinates with AlarmScheduler for alarm notifications
+ *
+ * @property repository Data source for alarms
+ * @property alarmScheduler Manages alarm scheduling with the system
+ * @property persistManager Handles persistent preferences storage
  */
 class AlarmsViewModel(
     private val repository: AlarmsRepository,
@@ -78,11 +72,14 @@ class AlarmsViewModel(
     private val persistManager: PersistManager,
 ): ViewModel() {
 
+    // UI state holder
     var state by mutableStateOf(AlarmsScreenState())
         private set
 
+    // Persisted time format preference
     private var use24HourFormat by persistManager.dataStorePrefs.preference(false, encrypted = true)
 
+    // Channel for one-time UI events
     private val eventChannel = Channel<AlarmsScreenEvent>()
     val events = eventChannel.receiveAsFlow()
 
@@ -90,31 +87,24 @@ class AlarmsViewModel(
         initializeViewModel()
     }
 
-    // React on changes in selected alarm by sending an event to UI to open the Alarm editor
+    // Observes selected alarm changes and triggers editor navigation
     private val selectedAlarmEditorJob = snapshotFlow { state.selectedAlarm }
         .filterNotNull()
         .map { alarm ->
             eventChannel.send(AlarmsScreenEvent.OnOpenAlarmEditorFor(alarm))
-            state = state.copy(
-                selectedAlarm = null
-            )
+            state = state.copy(selectedAlarm = null)
         }
         .launchIn(viewModelScope)
 
     /**
-     * Initializes the ViewModel by setting up state observers and data flows.
-     * Combines alarm data with minute updates to maintain real-time "time until" calculations.
-     *
-     * Flow process:
-     * 1. Sets initial time format from preferences
-     * 2. Combines alarm repository data with minute ticker
-     * 3. Transforms alarms into UI states with "time until" calculations
-     * 4. Updates the UI state with transformed alarm states
+     * Sets up initial state and data flows.
+     * Combines alarm data with minute updates to maintain accurate "time until" displays.
      */
     private fun initializeViewModel() {
         viewModelScope.launch {
             state = state.copy(use24HourFormat = use24HourFormat)
 
+            // Combine alarm data with minute ticker for real-time updates
             combine(
                 repository.getAlarms(),
                 ClockUtils.createMinuteTickerFlow()
@@ -136,25 +126,20 @@ class AlarmsViewModel(
         }
     }
 
-    /**
-     * Cleans up resources when ViewModel is destroyed.
-     * Cancels the selectedAlarmEditorJob to prevent memory leaks.
-     */
     override fun onCleared() {
         super.onCleared()
         selectedAlarmEditorJob.cancel()
     }
 
     /**
-     * Handles all UI actions performed on the alarm list screen.
-     * Processes various actions like adding, enabling/disabling, modifying, and deleting alarms.
+     * Processes UI actions, updating state and triggering side effects as needed.
+     * Handles alarm CRUD operations, scheduling, and preference changes.
      *
-     * @param action The action to be processed, defined by [AlarmsScreenAction]
+     * @param action The UI action to process
      */
     fun onAction(action: AlarmsScreenAction) {
         when (action) {
-
-            // Creates and opens editor for new alarm
+            // Create and open editor for new alarm
             is AlarmsScreenAction.AddNewAlarm -> {
                 viewModelScope.launch {
                     val newAlarm = repository.generateNewAlarm()
@@ -162,23 +147,21 @@ class AlarmsViewModel(
                 }
             }
 
-            // Enables/disables alarm and schedules/cancels it
+            // Toggle alarm enabled state and update scheduling
             is AlarmsScreenAction.EnableAlarmsScreen -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     val updatedAlarm = action.alarm.copy(isEnabled = action.enabled)
                     repository.upsertAlarm(updatedAlarm)
 
                     if (action.enabled) {
-                        println("ENABLED")
                         alarmScheduler.schedule(updatedAlarm)
                     } else {
-                        println("DISABLED")
                         alarmScheduler.cancel(updatedAlarm)
                     }
                 }
             }
 
-            // Updates selected days for an alarm
+            // Update alarm days and persist changes
             is AlarmsScreenAction.ChangeAlarmsScreenDays -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     val updatedAlarm = action.alarm.copy(selectedDays = action.selectedDays)
@@ -186,7 +169,7 @@ class AlarmsViewModel(
                 }
             }
 
-            // Deletes alarm and cancels its scheduling
+            // Remove alarm and cancel its scheduling
             is AlarmsScreenAction.DeleteAlarmsScreen -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     alarmScheduler.cancel(action.alarm)
@@ -194,21 +177,21 @@ class AlarmsViewModel(
                 }
             }
 
-            // Shows error when no days are selected
+            // Show validation error for day selection
             is AlarmsScreenAction.ShowDaysValidationError -> {
                 viewModelScope.launch {
                     eventChannel.send(AlarmsScreenEvent.OnShowSnackBar(UiText.StringResource(R.string.error_need_at_least_one_day)))
                 }
             }
 
-            // Sets selected alarm for editing
+            // Select alarm for editing
             is AlarmsScreenAction.SelectAlarmsScreen -> {
                 state = state.copy(
                     selectedAlarm = state.alarms.first { it.alarm.id == action.alarm.id }.alarm.copy(isNewAlarm = false)
                 )
             }
 
-            // Updates time format preference
+            // Update time format preference
             is AlarmsScreenAction.ChangeTimeFormat -> {
                 viewModelScope.launch(Dispatchers.IO) {
                     use24HourFormat = action.use24HourFormat

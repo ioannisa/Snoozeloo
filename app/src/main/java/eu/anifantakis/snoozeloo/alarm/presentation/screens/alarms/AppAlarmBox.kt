@@ -2,25 +2,12 @@ package eu.anifantakis.snoozeloo.alarm.presentation.screens.alarms
 
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -31,21 +18,22 @@ import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.alarm.domain.Alarm
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.AlarmUiState
-import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils
-import eu.anifantakis.snoozeloo.core.domain.util.Meridiem
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.UiText
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppBackground
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppCard
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppSwitch
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText14
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText16
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText24
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText42
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppWeeklyChips
+import eu.anifantakis.snoozeloo.core.domain.util.*
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.*
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.*
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import java.util.Locale
 
+/**
+ * A composable that displays a single alarm item with its details and controls.
+ * Features include time display (12/24h format), enable/disable switch, day selection,
+ * and sleep advice when appropriate.
+ *
+ * @param alarmUiState The UI state for this alarm
+ * @param use24HourFormat Whether to display time in 24-hour format
+ * @param onAlarmEvent Callback for alarm-related actions
+ * @param modifier Optional modifier for the component
+ */
 @Composable
 fun AppAlarmBox(
     alarmUiState: AlarmUiState,
@@ -55,7 +43,7 @@ fun AppAlarmBox(
 ) {
     val alarm = alarmUiState.alarm
 
-    // Time format calculation based on 24h preference
+    // Format time based on 24h preference
     val timeText = remember(alarm.hour, alarm.minute, use24HourFormat) {
         if (use24HourFormat) {
             String.format(Locale.ROOT,"%02d:%02d", alarm.hour, alarm.minute)
@@ -65,15 +53,15 @@ fun AppAlarmBox(
         }
     }
 
-    // Calculate meridiem only if needed (12h format)
+    // Calculate AM/PM indicator for 12h format
     val (_, meridiem) = remember(alarm.hour) {
         ClockUtils.get12HourFormatAndMeridiem(alarm.hour)
     }
 
-    // Create state for sleep advice visibility
+    // State for sleep advice visibility
     var showSleepAdvice by remember { mutableStateOf(false) }
 
-    // Calculate initial state
+    // Check if sleep advice should be shown
     LaunchedEffect(alarm.hour, alarm.minute) {
         showSleepAdvice = ClockUtils.shouldShowSleepAdvice(alarm.hour, alarm.minute) &&
                 ClockUtils.isMoreThanEightHoursAway(alarm.hour, alarm.minute, alarm.selectedDays)
@@ -83,15 +71,17 @@ fun AppAlarmBox(
         Column(
             verticalArrangement = Arrangement.spacedBy(UIConst.paddingSmall)
         ) {
-            // Header with title and switch
+            // Alarm title and enable/disable switch
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (alarm.title.trim() == "") {
-                    AppText16(text = stringResource(R.string.default_alarm_title),
-                        color = MaterialTheme.colorScheme.outline)
+                    AppText16(
+                        text = stringResource(R.string.default_alarm_title),
+                        color = MaterialTheme.colorScheme.outline
+                    )
                 } else {
                     AppText16(text = alarm.title, fontWeight = FontWeight.W700)
                 }
@@ -103,16 +93,15 @@ fun AppAlarmBox(
                 )
             }
 
-            // Time display
+            // Time display with AM/PM indicator
             Row(
                 horizontalArrangement = Arrangement.spacedBy(UIConst.paddingExtraSmall),
                 verticalAlignment = Alignment.Bottom,
                 modifier = Modifier.clickable(
-                    // its better looking when we remove the ripple effect from this clickable
                     interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
+                    indication = null, // Remove ripple for cleaner look
                 ) {
-                     onAlarmEvent(AlarmsScreenAction.SelectAlarmsScreen(alarm))
+                    onAlarmEvent(AlarmsScreenAction.SelectAlarmsScreen(alarm))
                 }
             ) {
                 AppText42(timeText)
@@ -125,13 +114,13 @@ fun AppAlarmBox(
                 }
             }
 
-            // Time until alarm
+            // Time until next alarm trigger
             AppText14(
                 text = alarmUiState.timeUntilNextAlarm.asString(),
                 color = MaterialTheme.colorScheme.outline
             )
 
-            // Weekly chips
+            // Day selection chips
             AppWeeklyChips(
                 modifier = Modifier.fillMaxWidth(),
                 selectedDays = alarm.selectedDays,
@@ -143,21 +132,22 @@ fun AppAlarmBox(
                 }
             )
 
-            // Sleep advice with animation
+            // Animated sleep advice section
             AnimatedVisibility(
                 visible = showSleepAdvice && alarm.selectedDays.hasAnyDaySelected(),
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
+                // Calculate suggested sleep time
                 val suggestedSleepTime = remember(alarm.hour, alarm.minute, use24HourFormat) {
                     val suggestedSleepHour = if (alarm.hour>8) alarm.hour-8 else 24+(alarm.hour-8)
-                    val meridiemName = if (suggestedSleepHour<=12 || suggestedSleepHour==24) Meridiem.AM.name else Meridiem.PM.name
+                    val meridiemName = if (suggestedSleepHour<=12 || suggestedSleepHour==24)
+                        Meridiem.AM.name else Meridiem.PM.name
 
                     if (use24HourFormat) {
                         String.format(Locale.ROOT, "%02d:%02d", suggestedSleepHour%24, alarm.minute)
                     } else {
                         val (hour, _) = ClockUtils.get12HourFormatAndMeridiem(suggestedSleepHour)
-
                         String.format(Locale.ROOT, "%d:%02d %s", hour, alarm.minute, meridiemName)
                     }
                 }
@@ -174,6 +164,10 @@ fun AppAlarmBox(
     }
 }
 
+/**
+ * Preview composable showing both 12-hour and 24-hour format versions of the alarm box
+ * with interactive state for testing enable/disable and day selection.
+ */
 @Preview(uiMode = UI_MODE_NIGHT_NO)
 @Preview(uiMode = UI_MODE_NIGHT_YES)
 @Composable
@@ -182,19 +176,11 @@ private fun AppAlarmBoxPreview() {
         mutableStateOf(
             Alarm(
                 id = "",
-                hour = 8, // Using 24-hour format, setting to 8 AM to test sleep advice
+                hour = 8,
                 minute = 0,
                 isEnabled = true,
                 title = "Sample Title",
-                selectedDays = DaysOfWeek(
-                    mo = true,  // Set a day to true to see time until alarm
-                    tu = false,
-                    we = false,
-                    th = false,
-                    fr = false,
-                    sa = false,
-                    su = false
-                )
+                selectedDays = DaysOfWeek(mo = true)
             )
         )
     }
@@ -214,7 +200,7 @@ private fun AppAlarmBoxPreview() {
                 modifier = Modifier.padding(UIConst.padding),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Preview 12-hour format
+                // Preview both time formats
                 AppAlarmBox(
                     alarmUiState = previewUiState,
                     use24HourFormat = false,
@@ -231,7 +217,6 @@ private fun AppAlarmBoxPreview() {
                     }
                 )
 
-                // Preview 24-hour format
                 AppAlarmBox(
                     alarmUiState = previewUiState,
                     use24HourFormat = true,
