@@ -15,10 +15,19 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import timber.log.Timber
 
+/**
+ * Restores scheduled alarms after device boot.
+ * Uses a coroutine to asynchronously fetch and reschedule enabled alarms
+ * from the repository.
+ */
 class BootCompletedReceiver : BroadcastReceiver(), KoinComponent {
     private val alarmsRepository: AlarmsRepository by inject()
     private val alarmScheduler: AlarmScheduler by inject()
 
+    /**
+     * Handles the BOOT_COMPLETED intent by rescheduling all enabled alarms.
+     * Uses PendingResult.goAsync() to handle the database operation safely.
+     */
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
 

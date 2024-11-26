@@ -20,27 +20,27 @@ import org.koin.core.component.inject
 import timber.log.Timber
 
 /**
- * BroadcastReceiver responsible for handling alarm events.
- * This receiver is triggered when an alarm time is reached and handles:
- * 1. Scheduling the next alarm occurrence
- * 2. Showing the full-screen alarm activity
- * 3. Creating and showing notifications
+ * Handles alarm events and manages the alarm lifecycle including scheduling, UI presentation, and notifications.
+ *
+ * Key responsibilities:
+ * - Schedules next alarm occurrence
+ * - Launches full-screen alarm activity
+ * - Creates and manages alarm notifications
  */
 class AlarmReceiver : BroadcastReceiver(), KoinComponent {
     companion object {
-        // Notification channel ID for Android O and above
         const val CHANNEL_ID = "alarm_channel"
-        // Unique identifier for the alarm notification
         const val NOTIFICATION_ID = 1
-        // Tag for logging
         private const val TAG = "AlarmReceiver"
     }
 
     private val alarmScheduler: AlarmScheduler by inject()
 
     /**
-     * Called when the alarm is triggered via device boot or incoming alarm
-     * Handles the complete alarm flow including rescheduling, UI, and notifications.
+     * Processes incoming alarm events and manages the alarm response flow.
+     *
+     * @param context The Context in which the receiver is running
+     * @param intent The Intent being received, containing alarm details
      */
     override fun onReceive(context: Context?, intent: Intent?) {
         if (context == null || intent == null) {
@@ -53,8 +53,6 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             return
         }
 
-        // during broadcast, if the screen was off, signal it so we show the overlay in full screen
-        // otherwise if during the broadcast the screen was on, show compact overlay
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         val wasScreenOff = !powerManager.isInteractive
 
@@ -72,31 +70,27 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
     }
 
     /**
-     * Launches the full-screen alarm activity.
-     * Uses appropriate flags to ensure proper activity stack handling.
+     * Launches the alarm dismissal activity with appropriate flags and extras.
      */
     private fun startAlarmActivity(context: Context, intent: Intent, wasScreenOff: Boolean) {
         try {
             val fullScreenIntent = Intent(context, AlarmDismissActivity::class.java).apply {
-                // Flags to ensure proper activity launch behavior
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)  // Required for launching from background
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP) // Clear any existing instances
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP) // Reuse existing instance if possible
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 putExtra(AlarmDismissActivity.EXTRA_SCREEN_WAS_OFF, wasScreenOff)
-                putExtras(intent) // Forward all alarm data
+                putExtras(intent)
             }
             context.startActivity(fullScreenIntent)
             Timber.tag(TAG).d("Started AlarmActivity successfully")
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to start AlarmActivity")
-            // Fallback to notification if activity launch fails
             handleNotification(context, intent)
         }
     }
 
     /**
-     * Handles the creation and display of the alarm notification.
-     * Checks permissions and creates notification channel if needed.
+     * Creates and displays the alarm notification if permissions are granted.
      */
     private fun handleNotification(context: Context, intent: Intent) {
         if (!hasNotificationPermission(context)) {
@@ -114,26 +108,23 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
     }
 
     /**
-     * Checks if the app has permission to show notifications.
-     * Required for Android 13 (API 33) and above.
+     * Checks for notification permission on Android 13 and above.
      */
     private fun hasNotificationPermission(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val hasPermission = ContextCompat.checkSelfPermission(
+            ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-            Timber.tag(TAG).d("Notification permission check result: $hasPermission")
-            hasPermission
+            ) == PackageManager.PERMISSION_GRANTED.also {
+                Timber.tag(TAG).d("Notification permission check result: $it")
+            }
         } else {
-            Timber.tag(TAG).d("Device API < 33, notification permission not required")
             true
         }
     }
 
     /**
-     * Creates the notification channel for Android O and above.
-     * Sets up high-priority channel for alarm notifications.
+     * Creates a high-priority notification channel for Android O and above.
      */
     private fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -147,7 +138,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
                     enableVibration(true)
                     enableLights(true)
                     setShowBadge(true)
-                    setBypassDnd(true) // Allow alarms to bypass Do Not Disturb
+                    setBypassDnd(true)
                     lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
                 }
 
@@ -162,8 +153,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
     }
 
     /**
-     * Creates and shows the alarm notification with full-screen intent
-     * and action buttons for dismiss and snooze.
+     * Displays the alarm notification with full-screen intent and action buttons.
      */
     private fun showAlarmNotification(context: Context, intent: Intent) {
         try {
@@ -171,10 +161,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             val dismissPendingIntent = createActionPendingIntent(context, intent, "DISMISS_ALARM", 1)
             val snoozePendingIntent = createActionPendingIntent(context, intent, "SNOOZE_ALARM", 2)
 
-            val alarmTitle = intent.getStringExtra("TITLE") ?: run {
-                Timber.tag(TAG).w("No title provided for alarm notification")
-                "Alarm"
-            }
+            val alarmTitle = intent.getStringExtra("TITLE") ?: "Alarm"
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
@@ -185,7 +172,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setFullScreenIntent(fullScreenPendingIntent, true)
                 .setAutoCancel(true)
-                .setOngoing(true) // Notification persists until explicitly dismissed
+                .setOngoing(true)
                 .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Dismiss", dismissPendingIntent)
                 .addAction(android.R.drawable.ic_popup_sync, "Snooze", snoozePendingIntent)
                 .build()
@@ -201,26 +188,26 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
 
     /**
      * Creates a PendingIntent for the full-screen alarm activity.
-     * Uses current timestamp as request code to ensure uniqueness.
      */
     private fun createFullScreenPendingIntent(context: Context, intent: Intent): PendingIntent {
         val fullScreenIntent = Intent(context, AlarmDismissActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtras(intent)
         }
 
         return PendingIntent.getActivity(
             context,
-            System.currentTimeMillis().toInt(), // Unique request code
+            System.currentTimeMillis().toInt(),
             fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 
     /**
-     * Creates a PendingIntent for notification actions (dismiss/snooze).
-     * Each action gets a unique request code to prevent conflicts.
+     * Creates a PendingIntent for notification actions.
+     *
+     * @param action The action identifier ("DISMISS_ALARM" or "SNOOZE_ALARM")
+     * @param requestCode Unique identifier for the PendingIntent
      */
     private fun createActionPendingIntent(
         context: Context,

@@ -17,9 +17,8 @@ import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 
 /**
- * Implementation of AlarmScheduler that handles scheduling and canceling alarms using Android's AlarmManager.
- * Each alarm can have multiple occurrences (one per selected day of week).
- * Each day's occurrence uses a unique requestCode to allow independent scheduling/cancellation.
+ * Manages alarm scheduling using Android's AlarmManager.
+ * Handles scheduling, cancellation, and rescheduling of recurring alarms for specific days of the week.
  */
 class AlarmSchedulerImpl(
     private val context: Context
@@ -47,11 +46,10 @@ class AlarmSchedulerImpl(
     }
 
     /**
-     * Schedules an alarm for each selected day of the week.
-     * Cancels all existing occurrences first to prevent duplicates.
+     * Schedules an alarm for all selected days of the week.
+     * Cancels existing occurrences before scheduling new ones.
      */
     override fun schedule(alarm: Alarm) {
-        // First cancel all existing occurrences for this alarm
         cancelAllOccurrences(alarm)
 
         if (!alarm.isEnabled || !alarm.selectedDays.hasAnyDaySelected()) {
@@ -59,7 +57,6 @@ class AlarmSchedulerImpl(
             return
         }
 
-        // Schedule for each selected day
         with(alarm.selectedDays) {
             if (mo) scheduleForDay(alarm, DayOfWeek.MONDAY)
             if (tu) scheduleForDay(alarm, DayOfWeek.TUESDAY)
@@ -72,12 +69,11 @@ class AlarmSchedulerImpl(
     }
 
     /**
-     * Schedules a single occurrence of the alarm for a specific day.
+     * Schedules a single alarm occurrence for the specified day.
      */
     private fun scheduleForDay(
         item: Alarm,
         dayOfWeek: DayOfWeek,
-
     ) {
         val nextAlarmTime = calculateTimeUntilAlarmForDay(item.hour, item.minute, dayOfWeek)
         if (nextAlarmTime == Duration.ZERO) {
@@ -91,7 +87,7 @@ class AlarmSchedulerImpl(
             shouldVibrate = item.vibrate,
             ringtoneUri = item.ringtoneUri,
             alarmId = item.id,
-            dayOfWeek = dayOfWeek.value, // the occurrence of that alarm in a given day of the week
+            dayOfWeek = dayOfWeek.value,
             hour = item.hour,
             minute = item.minute
         )
@@ -104,13 +100,11 @@ class AlarmSchedulerImpl(
     }
 
     /**
-     * Cancels all occurrences of an alarm across all days of the week.
+     * Cancels all occurrences of the given alarm across all days.
      */
     private fun cancelAllOccurrences(item: Alarm) {
-        // Cancel for each day of the week, regardless of whether it was selected
         DayOfWeek.entries.forEach { dayOfWeek ->
             val intent = Intent(context, AlarmReceiver::class.java).apply {
-                // Recreate the unique action
                 action = "eu.anifantakis.snoozeloo.ALARM_${item.id}_${dayOfWeek.value}"
             }
 
@@ -131,28 +125,23 @@ class AlarmSchedulerImpl(
         }
     }
 
-    /**
-     * Public cancel method that ensures all occurrences are cancelled.
-     */
     override fun cancel(alarm: Alarm) {
         cancelAllOccurrences(alarm)
     }
 
     /**
-     * Calculates the duration until the next alarm for a specific day of the week
-     * @param hour The hour of the alarm (0-23)
-     * @param minute The minute of the alarm (0-59)
-     * @param targetDay The specific day of week to calculate for
-     * @return Duration until the next occurrence of the alarm on the specified day
+     * Calculates the time until the next alarm occurrence for the specified day.
+     *
+     * @param hour Alarm hour (0-23)
+     * @param minute Alarm minute (0-59)
+     * @param targetDay Target day of week
+     * @return Duration until next alarm, or ZERO if no valid time found
      */
     private fun calculateTimeUntilAlarmForDay(
         hour: Int,
         minute: Int,
         targetDay: DayOfWeek,
     ): Duration {
-
-        //return Duration.ofSeconds(5L)
-
         val now = LocalDateTime.now()
         val alarmTime = LocalTime.of(hour, minute)
         var nextAlarmDateTime = LocalDateTime.of(now.toLocalDate(), alarmTime)
@@ -167,6 +156,9 @@ class AlarmSchedulerImpl(
         return Duration.between(now, nextAlarmDateTime)
     }
 
+    /**
+     * Calculates the next weekly occurrence time for the specified day and time.
+     */
     private fun calculateNextWeekTriggerTime(
         hour: Int,
         minute: Int,
@@ -182,6 +174,9 @@ class AlarmSchedulerImpl(
         return nextAlarmDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     }
 
+    /**
+     * Schedules a snooze alarm to trigger after the specified duration.
+     */
     override fun scheduleSnooze(alarmOccurrenceState: AlarmOccurrenceState, snoozeDurationMinutes: Long) {
         val snoozeIntent = createAlarmIntent(alarmOccurrenceState, isSnooze = true)
         val snoozeMillis = System.currentTimeMillis() + snoozeDurationMinutes * 60 * 1000
@@ -190,6 +185,9 @@ class AlarmSchedulerImpl(
         Timber.tag(TAG).d("Scheduled snooze alarm for ${alarmOccurrenceState.title} at $snoozeMillis")
     }
 
+    /**
+     * Reschedules an alarm occurrence for the next week on the same day and time.
+     */
     override fun rescheduleOccurrenceForNextWeek(alarmOccurrenceState: AlarmOccurrenceState) {
         val dayOfWeek = alarmOccurrenceState.dayOfWeek?.let { DayOfWeek.of(it) } ?: return
 
@@ -200,7 +198,6 @@ class AlarmSchedulerImpl(
         )
 
         val intent = createAlarmIntent(alarmOccurrenceState)
-
         alarmScheduleAt(nextWeekTriggerTime, intent)
         Timber.tag(TAG).d("Rescheduled alarm for next week on $dayOfWeek at $nextWeekTriggerTime - action: ${intent.action}")
     }
@@ -217,7 +214,7 @@ class AlarmSchedulerImpl(
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            0, // Same request code used when creating
+            0,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -234,6 +231,3 @@ class AlarmSchedulerImpl(
         private const val TAG = "AlarmSchedulerImpl"
     }
 }
-
-
-
