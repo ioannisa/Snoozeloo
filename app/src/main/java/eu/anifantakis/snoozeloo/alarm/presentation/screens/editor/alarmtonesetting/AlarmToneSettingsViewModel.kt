@@ -1,10 +1,7 @@
 package eu.anifantakis.snoozeloo.alarm.presentation.screens.editor.alarmtonesetting
 
 import android.net.Uri
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.anifantakis.snoozeloo.alarm.domain.RingtoneRepository
@@ -15,17 +12,27 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
- * Actions that can be performed in the alarm tone settings screen
+ * Defines possible user actions in the alarm tone settings screen.
  */
 sealed interface AlarmToneAction {
+    /** Open settings with optionally pre-selected tone */
     data class OnOpenRingtonesSetting(val alarmToneUri: String?) : AlarmToneAction
+
+    /** User selects a ringtone */
     data class OnSelectAlarmTone(val ringtone: AlarmoneItem) : AlarmToneAction
+
+    /** User navigates back */
     data object NavigateBack : AlarmToneAction
 }
 
 /**
- * Represents the UI state for the alarm tone settings screen
- * Marked as @Immutable to optimize Compose recompositions
+ * Represents the complete UI state for alarm tone settings.
+ * Immutable to optimize Compose recompositions.
+ *
+ * @property ringtones List of available ringtones
+ * @property currentSelectedRingtone Currently selected ringtone
+ * @property isLoading Whether ringtones are being loaded
+ * @property defaultSystemRingtone System's default alarm tone
  */
 @Immutable
 data class AlarmToneState(
@@ -36,14 +43,21 @@ data class AlarmToneState(
 )
 
 /**
- * One-time events emitted by the ViewModel
+ * One-time events emitted by the ViewModel.
+ * Used for navigation and user notifications.
  */
 sealed interface AlarmToneEvent {
+    /** Navigate back with selected ringtone */
     data class OnNavigateBack(var title: String, var uri: Uri?): AlarmToneEvent
 }
 
 /**
- * Data class representing a single ringtone item in the list
+ * Data model for a single ringtone item.
+ * Contains display information and selection state.
+ *
+ * @property title Display name of the ringtone
+ * @property uri URI for accessing the ringtone file
+ * @property isSelected Whether this ringtone is currently selected
  */
 data class AlarmoneItem(
     val title: String = "",
@@ -52,61 +66,71 @@ data class AlarmoneItem(
 )
 
 /**
- * ViewModel for managing alarm tone selection screen
- * Handles loading ringtones, selection, playback, and state management
+ * ViewModel managing ringtone selection and playback.
+ * Handles loading available ringtones, selection state, and preview playback.
+ *
+ * Key responsibilities:
+ * - Loading system and custom ringtones
+ * - Managing selection state
+ * - Handling ringtone preview playback
+ * - Maintaining UI state
+ *
+ * @property ringtoneRepository Data source for ringtone operations
  */
 class AlarmToneSettingViewModel(
     private val ringtoneRepository: RingtoneRepository,
 ) : ViewModel() {
 
-    // UI state holder using Compose's mutableStateOf for automatic recomposition
+    // UI state with Compose state holder
     var state by mutableStateOf(AlarmToneState())
         private set
 
-    // Channel for one-time events like navigation
+    // Channel for one-time events
     private val eventChannel = Channel<AlarmToneEvent>()
     val events = eventChannel.receiveAsFlow()
 
     /**
-     * Handles all UI actions for the alarm tone settings screen
+     * Central handler for all UI actions.
+     * Routes actions to appropriate handlers and updates state accordingly.
+     *
+     * @param action The UI action to process
      */
     fun onAction(action: AlarmToneAction) {
         when (action) {
-            // Load ringtones when settings screen is opened
             is AlarmToneAction.OnOpenRingtonesSetting -> {
                 loadRingtones(action.alarmToneUri)
             }
-            // Handle ringtone selection and playback
             is AlarmToneAction.OnSelectAlarmTone -> {
                 handleRingtoneSelection(action.ringtone)
             }
-            // Handle navigation back with selected ringtone
             AlarmToneAction.NavigateBack -> {
                 viewModelScope.launch {
                     ringtoneRepository.stopPlaying()
                     eventChannel.send(AlarmToneEvent.OnNavigateBack(
                         title = state.currentSelectedRingtone?.title ?: "",
-                        uri = state.currentSelectedRingtone?.uri)
-                    )
+                        uri = state.currentSelectedRingtone?.uri
+                    ))
                 }
             }
         }
     }
 
     /**
-     * Loads all available ringtones and sets initial selection
-     * @param alarmToneUri URI of the currently selected ringtone, if any
+     * Loads all available ringtones and sets initial selection.
+     * Updates UI state with loaded ringtones and handles loading state.
+     *
+     * @param alarmToneUri Optional URI of pre-selected ringtone
      */
     private fun loadRingtones(alarmToneUri: String?) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 state = state.copy(isLoading = true)
 
-                // Get system default and all available ringtones
+                // Load ringtones from repository
                 val defaultSystemAlarmRingtone = ringtoneRepository.getSystemDefaultAlarmRingtone()
                 val ringtones = ringtoneRepository.getAllRingtones()
 
-                // Create default ringtone item
+                // Create default ringtone UI item
                 val defaultRingtoneItem = defaultSystemAlarmRingtone.let { (title, uri) ->
                     AlarmoneItem(
                         title = title,
@@ -115,7 +139,7 @@ class AlarmToneSettingViewModel(
                     )
                 }
 
-                // Map ringtones to UI items with selection state
+                // Map repository ringtones to UI items
                 val toneItems = ringtones.map { (title, uri) ->
                     AlarmoneItem(
                         title = title,
@@ -124,14 +148,12 @@ class AlarmToneSettingViewModel(
                     )
                 }
 
-                // Update state with loaded ringtones and default ringtone
+                // Update state with loaded data
                 state = state.copy(
                     ringtones = toneItems,
                     defaultSystemRingtone = defaultRingtoneItem,
                     currentSelectedRingtone = when {
-                        // If a specific ringtone was requested
                         !alarmToneUri.isNullOrEmpty() -> toneItems.find { it.uri.toString() == alarmToneUri }
-                        // If no ringtone was specified, use the default
                         else -> defaultRingtoneItem
                     },
                     isLoading = false
@@ -144,9 +166,10 @@ class AlarmToneSettingViewModel(
     }
 
     /**
-     * Handles ringtone selection and playback
-     * Updates UI state and plays selected ringtone
-     * @param selectedRingtone The ringtone item that was selected
+     * Processes ringtone selection.
+     * Updates selection state and plays preview of selected tone.
+     *
+     * @param selectedRingtone The newly selected ringtone
      */
     private fun handleRingtoneSelection(selectedRingtone: AlarmoneItem) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -156,13 +179,13 @@ class AlarmToneSettingViewModel(
                     ringtone.copy(isSelected = ringtone.uri?.toString() == selectedRingtone.uri?.toString())
                 }
 
-                // Update state with new selection
+                // Update UI state
                 state = state.copy(
                     ringtones = updatedRingtones,
                     currentSelectedRingtone = selectedRingtone
                 )
 
-                // Play the selected ringtone if it has a URI
+                // Play preview of selected ringtone
                 selectedRingtone.uri?.let { ringtoneRepository.play(it) }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update ringtone selection")

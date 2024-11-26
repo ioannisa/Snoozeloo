@@ -5,25 +5,13 @@ import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,13 +20,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.Icons
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppActionButton
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppCard
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.AppText14
-import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.LocalDimmingState
+import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.*
 import eu.anifantakis.snoozeloo.core.presentation.ui.ObserveAsEvents
 import org.koin.androidx.compose.koinViewModel
 
+/**
+ * Root composable for the alarm tone selection screen.
+ * Handles navigation, state observation, and loading states.
+ *
+ * @param alarmToneUri Currently selected alarm tone URI
+ * @param onGoBack Callback when user navigates back with selected tone
+ * @param viewModel ViewModel handling tone selection logic
+ */
 @Composable
 fun AlarmToneSettingScreenRoot(
     alarmToneUri: String?,
@@ -50,10 +43,12 @@ fun AlarmToneSettingScreenRoot(
         viewModel.onAction(AlarmToneAction.NavigateBack)
     }
 
+    // Load ringtones when screen opens
     LaunchedEffect(Unit) {
         viewModel.onAction(AlarmToneAction.OnOpenRingtonesSetting(alarmToneUri = alarmToneUri))
     }
 
+    // Handle navigation events
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
             is AlarmToneEvent.OnNavigateBack -> {
@@ -62,16 +57,16 @@ fun AlarmToneSettingScreenRoot(
         }
     }
 
+    // Manage screen dimming during loading
     val dimmingState = LocalDimmingState.current
     LaunchedEffect(viewModel.state.isLoading) {
         dimmingState.isDimmed = viewModel.state.isLoading
     }
 
+    // Main layout with loading indicator
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
-
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -89,6 +84,10 @@ fun AlarmToneSettingScreenRoot(
     }
 }
 
+/**
+ * Main screen content showing the list of available ringtones.
+ * Includes a back button and scrollable list of tone options.
+ */
 @Composable
 private fun AlarmToneSettingScreen(
     state: AlarmToneState,
@@ -96,6 +95,7 @@ private fun AlarmToneSettingScreen(
 ) {
     val listState = rememberLazyListState()
 
+    // Scroll to selected ringtone when list loads
     LaunchedEffect(state.ringtones) {
         val selectedIndex = state.ringtones.indexOfFirst { it.isSelected }
         if (selectedIndex >= 0) {
@@ -107,6 +107,7 @@ private fun AlarmToneSettingScreen(
         verticalArrangement = Arrangement.spacedBy(UIConst.padding),
         modifier = Modifier.padding(horizontal = UIConst.padding)
     ) {
+        // Back button
         AppActionButton(
             icon = Icons.back,
             cornerRadius = 10.dp,
@@ -117,11 +118,12 @@ private fun AlarmToneSettingScreen(
             onAction(AlarmToneAction.NavigateBack)
         }
 
+        // Ringtone list
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             state = listState,
         ) {
-            // Add Silent option
+            // Silent option
             item {
                 RingtoneSettingItem(
                     alarmoneItem = AlarmoneItem(title = "Silent", uri = null),
@@ -133,7 +135,7 @@ private fun AlarmToneSettingScreen(
                 )
             }
 
-            // Add Default System Ringtone if available
+            // Default system ringtone if available
             state.defaultSystemRingtone?.let { defaultRingtone ->
                 item {
                     RingtoneSettingItem(
@@ -146,7 +148,7 @@ private fun AlarmToneSettingScreen(
                 }
             }
 
-            // Add all other ringtones
+            // Custom ringtones, excluding system default
             items(state.ringtones.filter { it.uri?.toString() != state.defaultSystemRingtone?.uri?.toString() }) { ringtone ->
                 RingtoneSettingItem(
                     alarmoneItem = ringtone,
@@ -160,6 +162,15 @@ private fun AlarmToneSettingScreen(
     }
 }
 
+/**
+ * Individual ringtone item showing name and selection state.
+ * Displays different icons for silent and regular ringtones.
+ *
+ * @param alarmoneItem Ringtone data
+ * @param isSelected Whether this tone is currently selected
+ * @param onClickOnRingtone Callback when tone is selected
+ * @param isSilent Whether this is the silent option
+ */
 @Composable
 fun RingtoneSettingItem(
     alarmoneItem: AlarmoneItem,
@@ -167,19 +178,21 @@ fun RingtoneSettingItem(
     onClickOnRingtone: (AlarmoneItem) -> Unit,
     isSilent: Boolean = false
 ) {
-    AppCard(modifier = Modifier
-        .padding(vertical = UIConst.paddingExtraSmall)
-        .clickable {
-            onClickOnRingtone(alarmoneItem.copy(
-                title = if (isSilent) "Silent" else alarmoneItem.title,
-                uri = if (isSilent) null else alarmoneItem.uri
-            ))
-        }
+    AppCard(
+        modifier = Modifier
+            .padding(vertical = UIConst.paddingExtraSmall)
+            .clickable {
+                onClickOnRingtone(alarmoneItem.copy(
+                    title = if (isSilent) "Silent" else alarmoneItem.title,
+                    uri = if (isSilent) null else alarmoneItem.uri
+                ))
+            }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(UIConst.paddingSmall)
         ) {
+            // Bell icon (on/off)
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
@@ -194,7 +207,10 @@ fun RingtoneSettingItem(
                 )
             }
 
+            // Ringtone title
             AppText14(alarmoneItem.title, modifier = Modifier.weight(1f))
+
+            // Selection indicator
             if (isSelected) {
                 Icon(
                     imageVector = Icons.checked,
@@ -215,9 +231,6 @@ fun RingtoneSettingItem(
 @Preview(uiMode = UI_MODE_NIGHT_NO)
 @Preview(uiMode = UI_MODE_NIGHT_YES)
 @Composable
-@Preview
 fun RingtoneSettingScreenPreview() {
-    AlarmToneSettingScreen(state = AlarmToneState()) {
-
-    }
+    AlarmToneSettingScreen(state = AlarmToneState()) { }
 }

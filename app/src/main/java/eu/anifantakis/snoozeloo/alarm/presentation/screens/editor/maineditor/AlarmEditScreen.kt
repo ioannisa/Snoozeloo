@@ -66,6 +66,14 @@ import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
+/**
+ * Root composable for the alarm editor screen.
+ * Handles navigation events and snackbar messages.
+ *
+ * @param viewModel ViewModel managing alarm editing state
+ * @param onOpenRingtoneSetting Callback for opening ringtone selection
+ * @param onClose Callback for closing the editor
+ */
 @Composable
 fun AlarmEditScreenRoot(
     viewModel: AlarmEditViewModel = koinViewModel(),
@@ -76,12 +84,10 @@ fun AlarmEditScreenRoot(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Handle one-time events (navigation, messages)
     ObserveAsEvents(viewModel.events) { event ->
         when (event) {
-            is AlarmEditorScreenEvent.OnOpenRingtoneSettings -> {
-                onOpenRingtoneSetting()
-            }
-
+            is AlarmEditorScreenEvent.OnOpenRingtoneSettings -> onOpenRingtoneSetting()
             is AlarmEditorScreenEvent.OnShowSnackBar -> {
                 scope.launch {
                     snackbarHostState.showSnackbar(
@@ -90,10 +96,7 @@ fun AlarmEditScreenRoot(
                     )
                 }
             }
-
-            is AlarmEditorScreenEvent.OnClose -> {
-                onClose()
-            }
+            is AlarmEditorScreenEvent.OnClose -> onClose()
         }
     }
 
@@ -110,6 +113,13 @@ fun AlarmEditScreenRoot(
     }
 }
 
+/**
+ * Main alarm editor screen content.
+ * Displays alarm settings including time, title, days, ringtone, volume, and vibration.
+ *
+ * @param alarmUiState Current alarm state
+ * @param onAction Callback for user actions
+ */
 @Composable
 fun AlarmEditScreen(
     alarmUiState: AlarmUiState?,
@@ -117,11 +127,11 @@ fun AlarmEditScreen(
 ) {
     val dimmingState = LocalDimmingState.current
 
-    // State to control when to show the AlertDialog
-    // This demonstrates holding a state inside composable and not inside ViewModel
+    // Local UI state for dialog visibility and clock reset
     var showDialog by remember { mutableStateOf(false) }
     var clockResetTrigger by remember { mutableIntStateOf(0) }
 
+    // Update dimming when dialog is shown
     LaunchedEffect(showDialog) {
         dimmingState.isDimmed = showDialog
     }
@@ -129,19 +139,20 @@ fun AlarmEditScreen(
     Box {
         Column(
             verticalArrangement = Arrangement.spacedBy(UIConst.padding),
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp)
         ) {
+            // Top bar with save/cancel buttons
             TopButtons(
                 hasChanges = alarmUiState?.hasChanges ?: false,
                 onSave = { onAction(AlarmEditorScreenAction.SaveAlarm) },
                 onCancel = {
                     onAction(AlarmEditorScreenAction.CancelChanges)
-                    clockResetTrigger++ // Increment trigger to force clock reset
+                    clockResetTrigger++ // Reset clock to original time
                 }
             )
 
             alarmUiState?.let { currentState ->
+                // Time picker clock
                 AppClock(
                     initialHour = currentState.alarm.hour,
                     initialMinute = currentState.alarm.minute,
@@ -152,19 +163,16 @@ fun AlarmEditScreen(
                     onAction(AlarmEditorScreenAction.UpdateAlarmTime(hour, minute))
                 }
 
-                // under the clock the content should be scrollable to ensure all the content fits
+                // Scrollable settings section
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(UIConst.padding)
                 ) {
-
+                    // Alarm title card
                     AppCard(
-                        modifier = Modifier
-                            .clickable {
-                                showDialog = true
-                            }
+                        modifier = Modifier.clickable { showDialog = true }
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -186,6 +194,7 @@ fun AlarmEditScreen(
                         }
                     }
 
+                    // Weekly repeat selection
                     AppCard {
                         Column {
                             AppText16(stringResource(R.string.repeat), fontWeight = FontWeight.W700)
@@ -201,11 +210,11 @@ fun AlarmEditScreen(
                         }
                     }
 
+                    // Ringtone selection
                     AppCard(
-                        modifier = Modifier
-                            .clickable {
-                                onAction(AlarmEditorScreenAction.OpenRingtoneSettings)
-                            }
+                        modifier = Modifier.clickable {
+                            onAction(AlarmEditorScreenAction.OpenRingtoneSettings)
+                        }
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -215,7 +224,6 @@ fun AlarmEditScreen(
                                 stringResource(R.string.alarm_ringtone),
                                 fontWeight = FontWeight.W700
                             )
-
                             AppText16(
                                 if (currentState.alarm.ringtoneTitle.trim() == "") {
                                     stringResource(R.string.default_ringtone_name)
@@ -228,6 +236,7 @@ fun AlarmEditScreen(
                         }
                     }
 
+                    // Volume slider
                     AppCard {
                         Column {
                             AppText16(
@@ -244,6 +253,7 @@ fun AlarmEditScreen(
                         }
                     }
 
+                    // Vibration toggle
                     AppCard {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -265,6 +275,7 @@ fun AlarmEditScreen(
                         }
                     }
 
+                    // Title edit dialog
                     if (showDialog) {
                         ShowAlertDialog(
                             initialTitle = currentState.alarm.title.trim(),
@@ -281,15 +292,17 @@ fun AlarmEditScreen(
     }
 }
 
+/**
+ * Top bar buttons for saving or canceling alarm edits.
+ * Save button is enabled only when changes are present.
+ */
 @Composable
 fun TopButtons(
     hasChanges: Boolean = false,
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
-    Row(
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
+    Row(horizontalArrangement = Arrangement.SpaceBetween) {
         Box(modifier = Modifier.weight(1f)) {
             AppActionButton(
                 icon = Icons.close,
@@ -297,9 +310,8 @@ fun TopButtons(
                 fillWidth = false,
                 enabled = true,
                 contentPadding = PaddingValues(all = 0.dp),
-            ) {
-                onCancel()
-            }
+                onClick = onCancel
+            )
         }
 
         Box {
@@ -316,8 +328,16 @@ fun TopButtons(
     }
 }
 
+/**
+ * Dialog for editing alarm title with keyboard focus management.
+ * Supports both button and keyboard-based confirmation.
+ */
 @Composable
-private fun ShowAlertDialog(initialTitle: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+private fun ShowAlertDialog(
+    initialTitle: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
     var textInput by remember {
         mutableStateOf(
             TextFieldValue(
@@ -330,7 +350,7 @@ private fun ShowAlertDialog(initialTitle: String, onDismiss: () -> Unit, onSave:
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    // Auto-focus on dialog show
+    // Auto-focus text field
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
@@ -408,13 +428,8 @@ private fun AlarmEditScreenPreview() {
         isEnabled = true,
         title = "Sample Title",
         selectedDays = DaysOfWeek(
-            mo = false,
-            tu = false,
-            we = false,
-            th = false,
-            fr = false,
-            sa = false,
-            su = false
+            mo = false, tu = false, we = false,
+            th = false, fr = false, sa = false, su = false
         )
     )
 

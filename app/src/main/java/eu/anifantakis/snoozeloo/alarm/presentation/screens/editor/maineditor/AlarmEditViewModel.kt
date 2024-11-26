@@ -27,6 +27,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Duration
 
+/**
+ * Actions that can be performed in the alarm editor.
+ * Each action represents a distinct user interaction or system event.
+ */
 sealed interface AlarmEditorScreenAction {
     data class UpdateAlarmTime(val hour: Int, val minute: Int): AlarmEditorScreenAction
     data class UpdateAlarmDays(val days: DaysOfWeek): AlarmEditorScreenAction
@@ -37,9 +41,13 @@ sealed interface AlarmEditorScreenAction {
     data class UpdateAlarmVolume(val volume: Float): AlarmEditorScreenAction
     data class UpdateAlarmVibration(val vibrate: Boolean): AlarmEditorScreenAction
     data object ShowDaysValidationError: AlarmEditorScreenAction
-    data class UpdateRingtoneResult(val title: String, val uri: String?) : AlarmEditorScreenAction
+    data class UpdateRingtoneResult(val title: String, val uri: String?): AlarmEditorScreenAction
 }
 
+/**
+ * One-time events emitted by the ViewModel.
+ * Used for navigation and user notifications.
+ */
 sealed interface AlarmEditorScreenEvent {
     data object OnOpenRingtoneSettings: AlarmEditorScreenEvent
     data class OnShowSnackBar(val message: String): AlarmEditorScreenEvent
@@ -47,12 +55,17 @@ sealed interface AlarmEditorScreenEvent {
 }
 
 /**
- * ViewModel responsible for managing the alarm editing screen.
- * Handles alarm creation, modification, and state management.
+ * ViewModel managing alarm editing functionality.
+ * Handles state management, user interactions, and alarm persistence.
  *
- * @param alarm The Alarm which is to be edited
- * @param repository Repository for alarm data operations
- * @param alarmScheduler Scheduler for managing alarm timing
+ * Key features:
+ * - Real-time UI updates with minute-based refresh
+ * - Change detection for save/cancel operations
+ * - Alarm scheduling integration
+ *
+ * @property alarm Alarm being edited
+ * @property repository Data source for alarm operations
+ * @property alarmScheduler Handles alarm scheduling with system
  */
 class AlarmEditViewModel(
     alarm: Alarm,
@@ -60,24 +73,27 @@ class AlarmEditViewModel(
     private val alarmScheduler: AlarmScheduler
 ): ViewModel() {
 
-    // Base state holding the current alarm data
+    // Current alarm state
     private val _baseAlarmState = MutableStateFlow<Alarm?>(null)
 
-    // Original alarm state used to detect changes and handle cancellations
+    // Original alarm state for change detection
     private var originalAlarm: Alarm? = null
 
-    // Flow that emits a new value every minute, used to update time-based UI elements
+    // Minute-based ticker for updating time-based UI elements
     private val minuteTicker = ClockUtils.createMinuteTickerFlow()
         .stateIn(
             scope = viewModelScope,
-            // Stop collecting after 5 seconds of no subscribers to handle configuration changes
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = System.currentTimeMillis()
         )
 
-    // Combines base alarm state with minute ticker to create derived UI state
-    // Here we also demonstrate how we can turn a StateFlow to State with the extension function toComposeState
-    // which is a nice alternative to the "collect { state -> myState = myState.copy(...) } " function we use in the AlarmsViewModel
+    /**
+     * Combined UI state that updates every minute.
+     * Includes:
+     * - Current alarm state
+     * - Time until next alarm
+     * - Change detection
+     */
     val alarmUiState = combine(
         _baseAlarmState,
         minuteTicker
@@ -95,12 +111,12 @@ class AlarmEditViewModel(
                 hasChanges = originalAlarm?.let { originalAlarm ->
                     alarm != originalAlarm || alarm.isNewAlarm
                 } ?: false
-            ) to timeUntilNextAlarm  // Pair the state with duration for filtering
+            ) to timeUntilNextAlarm
         }
     }
-        .filterNotNull()  // Filter out null values first
-        .filter { (_, duration) -> duration != Duration.ZERO }  // Filter based on duration
-        .map { (state, _) -> state }  // Keep only the state, drop the duration
+        .filterNotNull()  // Remove null states
+        .filter { (_, duration) -> duration != Duration.ZERO }  // Only valid durations
+        .map { (state, _) -> state }  // Keep only the UI state
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -108,7 +124,7 @@ class AlarmEditViewModel(
         )
         .toComposeState(viewModelScope)
 
-    // Channel for one-time events (navigation, snackbar messages, etc.)
+    // Event channel for one-time UI events
     private val eventChannel = Channel<AlarmEditorScreenEvent>()
     val events = eventChannel.receiveAsFlow()
 
@@ -117,7 +133,7 @@ class AlarmEditViewModel(
     }
 
     /**
-     * Helper function to update the alarm state while maintaining null safety
+     * Updates alarm state safely with null checking.
      */
     private fun updateAlarm(update: (Alarm) -> Alarm) {
         _baseAlarmState.update { currentState ->
@@ -126,101 +142,99 @@ class AlarmEditViewModel(
     }
 
     /**
-     * Handles all UI actions for the alarm editor screen
+     * Central handler for all UI actions.
+     * Processes user interactions and updates state accordingly.
      */
     fun onAction(action: AlarmEditorScreenAction) {
         when (action) {
-            // Update alarm day selection
             is AlarmEditorScreenAction.UpdateAlarmDays -> {
                 updateAlarm { it.copy(selectedDays = action.days) }
             }
-            // Update alarm time
             is AlarmEditorScreenAction.UpdateAlarmTime -> {
                 updateAlarm { it.copy(
                     hour = action.hour,
                     minute = action.minute
                 )}
             }
-            // Update alarm title, trimming whitespace
             is AlarmEditorScreenAction.UpdateAlarmTitle -> {
                 updateAlarm { it.copy(title = action.title.trim()) }
             }
-            // Update alarm volume
             is AlarmEditorScreenAction.UpdateAlarmVolume -> {
                 updateAlarm { it.copy(volume = action.volume) }
             }
-            // Toggle alarm vibration
             is AlarmEditorScreenAction.UpdateAlarmVibration -> {
                 updateAlarm { it.copy(vibrate = action.vibrate) }
             }
-            // Update alarm ringtone settings
             is AlarmEditorScreenAction.UpdateRingtoneResult -> {
                 updateAlarm { it.copy(
                     ringtoneTitle = action.title,
                     ringtoneUri = action.uri
                 )}
             }
-            // Open ringtone selection screen
             is AlarmEditorScreenAction.OpenRingtoneSettings -> {
                 viewModelScope.launch {
                     eventChannel.send(AlarmEditorScreenEvent.OnOpenRingtoneSettings)
                 }
             }
-            // Save alarm changes
-            is AlarmEditorScreenAction.SaveAlarm -> {
-                viewModelScope.launch(Dispatchers.IO) {
-                    _baseAlarmState.value?.let { currentAlarm ->
-                        if (currentAlarm.isEnabled) {
-                            alarmScheduler.schedule(currentAlarm)
-                        }
-
-                        // Persist alarm to storage
-                        repository.upsertAlarm(currentAlarm)
-
-                        // Update state references
-                        originalAlarm = currentAlarm
-                        _baseAlarmState.value = currentAlarm
-
-                        eventChannel.send(AlarmEditorScreenEvent.OnClose)
-                    }
-                }
-            }
-            // Cancel changes and restore original state
-            is AlarmEditorScreenAction.CancelChanges -> {
-                originalAlarm?.let { original ->
-                    // Check if time was modified for animation purposes
-                    val hadTimeChanges = _baseAlarmState.value?.let { currentAlarm ->
-                        currentAlarm.hour != original.hour || currentAlarm.minute != original.minute
-                    } ?: false
-
-                    // Restore original state
-                    _baseAlarmState.value = original
-
-                    viewModelScope.launch(Dispatchers.IO) {
-                        // Add delay for time change animation
-                        if (hadTimeChanges) {
-                            delay(400L)
-                        }
-                        eventChannel.send(AlarmEditorScreenEvent.OnClose)
-                    }
-                }
-            }
-            // Show validation error for missing days selection
+            is AlarmEditorScreenAction.SaveAlarm -> handleSaveAlarm()
+            is AlarmEditorScreenAction.CancelChanges -> handleCancelChanges()
             is AlarmEditorScreenAction.ShowDaysValidationError -> {
                 viewModelScope.launch {
-                    eventChannel.send(AlarmEditorScreenEvent.OnShowSnackBar("All alarms need at least one active day"))
+                    eventChannel.send(
+                        AlarmEditorScreenEvent.OnShowSnackBar("All alarms need at least one active day")
+                    )
                 }
             }
         }
     }
 
     /**
-     * Loads Initializes Alarm state with the provided alarm
-     * Prevents multiple loads of the same alarm
+     * Handles saving alarm changes.
+     * Schedules alarm if enabled and persists changes.
+     */
+    private fun handleSaveAlarm() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _baseAlarmState.value?.let { currentAlarm ->
+                if (currentAlarm.isEnabled) {
+                    alarmScheduler.schedule(currentAlarm)
+                }
+
+                repository.upsertAlarm(currentAlarm)
+                originalAlarm = currentAlarm
+                _baseAlarmState.value = currentAlarm
+
+                eventChannel.send(AlarmEditorScreenEvent.OnClose)
+            }
+        }
+    }
+
+    /**
+     * Handles canceling changes with animation delay.
+     * Restores original alarm state if changes were made.
+     */
+    private fun handleCancelChanges() {
+        originalAlarm?.let { original ->
+            val hadTimeChanges = _baseAlarmState.value?.let { currentAlarm ->
+                currentAlarm.hour != original.hour || currentAlarm.minute != original.minute
+            } ?: false
+
+            _baseAlarmState.value = original
+
+            viewModelScope.launch(Dispatchers.IO) {
+                if (hadTimeChanges) {
+                    delay(400L) // Allow time for animation
+                }
+                eventChannel.send(AlarmEditorScreenEvent.OnClose)
+            }
+        }
+    }
+
+    /**
+     * Initializes alarm state.
+     * Makes a copy to track original state for change detection.
      */
     private fun loadAlarm(alarm: Alarm) {
         originalAlarm = alarm.copy()
         _baseAlarmState.value = alarm.copy()
-        println("ALARM IS ${originalAlarm}")
     }
 }
