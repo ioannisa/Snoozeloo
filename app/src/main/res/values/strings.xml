@@ -45,6 +45,7 @@
     <string name="enable">Enable</string>
     <string name="permission_notifications_description">Would you like to enable notifications for this app?</string>
 
-    <string name="error_need_at_least_one_day">All alarms need at least one active day</string>">
+    <string name="error_need_at_least_one_day">All alarms need at least one active day</string>
+    <string name="snoozed">(Snoozed)</string>">
 
 </resources>

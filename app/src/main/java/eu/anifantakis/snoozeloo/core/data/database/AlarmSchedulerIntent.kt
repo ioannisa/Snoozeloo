@@ -59,7 +59,7 @@ class AlarmSchedulerIntent(packageContext: Context, cls: Class<*>) : Intent(pack
     ) = apply {
         // Store all alarm properties as extras
         putExtra(EXTRA_ALARM_ID, alarmOccurrenceState.alarmId)
-        putExtra(EXTRA_TITLE, if (isSnooze) "${alarmOccurrenceState.title} (Snoozed)" else alarmOccurrenceState.title)
+        putExtra(EXTRA_TITLE, alarmOccurrenceState.title)
         putExtra(EXTRA_VOLUME, alarmOccurrenceState.volume)
         putExtra(EXTRA_VIBRATE, alarmOccurrenceState.shouldVibrate)
         putExtra(EXTRA_ALARM_URI, alarmOccurrenceState.ringtoneUri)

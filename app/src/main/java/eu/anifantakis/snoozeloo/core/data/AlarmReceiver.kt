@@ -58,27 +58,31 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
 
         Timber.tag(TAG).d("AlarmReceiver: onReceive triggered with action: ${intent.action}")
 
-        if (!intent.getBooleanExtra("IS_SNOOZE", false)) {
+        val isSnooze = intent.getBooleanExtra("IS_SNOOZE", false)
+        if (!isSnooze) {
             alarmScheduler.cancelAlarmOccurrenceByIntentAction(intent.action.toString())
 
             val alarmState = AlarmSchedulerIntent.toAlarmOccurrenceState(intent)
             alarmScheduler.rescheduleOccurrenceForNextWeek(alarmState)
         }
 
-        startAlarmActivity(context, intent, wasScreenOff)
+
+
+        startAlarmActivity(context, intent, wasScreenOff, isSnooze)
         handleNotification(context, intent)
     }
 
     /**
      * Launches the alarm dismissal activity with appropriate flags and extras.
      */
-    private fun startAlarmActivity(context: Context, intent: Intent, wasScreenOff: Boolean) {
+    private fun startAlarmActivity(context: Context, intent: Intent, wasScreenOff: Boolean, isSnooze: Boolean) {
         try {
             val fullScreenIntent = Intent(context, AlarmDismissActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 putExtra(AlarmDismissActivity.EXTRA_SCREEN_WAS_OFF, wasScreenOff)
+                putExtra(AlarmDismissActivity.EXTRA_IS_SNOOZE, isSnooze)
                 putExtras(intent)
             }
             context.startActivity(fullScreenIntent)

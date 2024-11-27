@@ -14,8 +14,10 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -36,6 +38,7 @@ class AlarmDismissActivity : ComponentActivity() {
         private const val TAG = "AlarmActivity"
         private const val DEFAULT_VOLUME = 0.5f
         const val EXTRA_SCREEN_WAS_OFF = "SCREEN_WAS_OFF" // Used to determine overlay size
+        const val EXTRA_IS_SNOOZE = "IS_SNOOZE" // Used to determine action if we should show "(Snoozed)" next to title
     }
 
     // ViewModel with callback for activity finish
@@ -50,15 +53,24 @@ class AlarmDismissActivity : ComponentActivity() {
         handleScreenWake()
         setupAlarm()
 
+        val isSnooze = intent?.getBooleanExtra(EXTRA_IS_SNOOZE, false) ?: false
         val wasScreenOff = intent?.getBooleanExtra(EXTRA_SCREEN_WAS_OFF, false) ?: false
 
         // Set up the UI with Compose
         setContent {
             val alarmState by viewModel.state.collectAsStateWithLifecycle()
 
+            val defaultTitle = stringResource(R.string.default_alarm_title)
+            val snoozeIndicator = stringResource(R.string.snoozed)
+
+            // for empty alarm titles, show default alarm title
+            val title = alarmState.title.ifBlank { defaultTitle }
+            // if this is a snoozed alarm, show the "(Snoozed)"indicator  next to title
+            val alarmTitle = if (isSnooze) "$title $snoozeIndicator" else title
+
             SnoozelooTheme {
                 AlarmDismissScreen(
-                    title = alarmState.title,
+                    title = alarmTitle,
                     isFullScreen = wasScreenOff,
                     onSnooze = viewModel::snoozeAlarm,
                     onDismiss = viewModel::dismissAlarm,
