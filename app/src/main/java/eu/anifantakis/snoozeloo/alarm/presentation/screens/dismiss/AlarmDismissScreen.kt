@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import eu.anifantakis.snoozeloo.core.domain.util.ClockUtils.toTime24String
@@ -18,6 +19,7 @@ import eu.anifantakis.snoozeloo.core.presentation.designsystem.UIConst
 import eu.anifantakis.snoozeloo.core.presentation.designsystem.components.*
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 import java.time.LocalTime
+import eu.anifantakis.snoozeloo.R
 
 /**
  * Screen shown when an alarm is triggered.
@@ -97,7 +99,7 @@ fun AlarmDismissScreen(
 
                 // Action buttons
                 AppActionButton(
-                    text = "Snooze",
+                    text = stringResource(R.string.snooze_button_text),
                     largeText = false,
                     onClick = onSnooze,
                     contentPadding = PaddingValues(
@@ -105,7 +107,7 @@ fun AlarmDismissScreen(
                     )
                 )
                 AppOutlinedActionButton(
-                    text = "Dismiss",
+                    text = stringResource(R.string.dismiss_button_text),
                     largeText = false,
                     onClick = onDismiss,
                     contentPadding = PaddingValues(

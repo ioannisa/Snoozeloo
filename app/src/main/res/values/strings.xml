@@ -46,6 +46,8 @@
     <string name="permission_notifications_description">Would you like to enable notifications for this app?</string>
 
     <string name="error_need_at_least_one_day">All alarms need at least one active day</string>
-    <string name="snoozed">(Snoozed)</string>">
+    <string name="snoozed">(Snoozed)</string>
+    <string name="dismiss_button_text">Dismiss</string>
+    <string name="snooze_button_text">Snooze</string>">
 
 </resources>

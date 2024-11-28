@@ -12,6 +12,8 @@ import android.os.Build
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getString
+import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.alarm.presentation.screens.dismiss.AlarmDismissActivity
 import eu.anifantakis.snoozeloo.core.data.database.AlarmSchedulerIntent
 import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
@@ -172,20 +174,22 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             val dismissPendingIntent = createActionPendingIntent(context, intent, "DISMISS_ALARM", 1)
             val snoozePendingIntent = createActionPendingIntent(context, intent, "SNOOZE_ALARM", 2)
 
-            val alarmTitle = intent.getStringExtra("TITLE") ?: "Alarm"
+            val alarmTitle = intent.getStringExtra("TITLE") ?: getString(context, R.string.default_alarm_title)
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                .setContentTitle(alarmTitle)
-                .setContentText("Wake up!")
+                .setContentTitle(getString(context, R.string.app_name))
+                .setContentText(alarmTitle)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setFullScreenIntent(fullScreenPendingIntent, true)
                 .setAutoCancel(true)
                 .setOngoing(true)
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Dismiss", dismissPendingIntent)
-                .addAction(android.R.drawable.ic_popup_sync, "Snooze", snoozePendingIntent)
+                .addAction(android.R.drawable.ic_menu_close_clear_cancel,
+                    context.getString(R.string.dismiss_button_text), dismissPendingIntent)
+                .addAction(android.R.drawable.ic_popup_sync,
+                    context.getString(R.string.snooze_button_text), snoozePendingIntent)
                 .build()
 
             val notificationManager =
