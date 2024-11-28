@@ -53,11 +53,16 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             return
         }
 
+        // find out if the screen was turned off at the time of broadcast
+        // we need that because we show full screen overlay if the screen is off
+        // otherwise we show the compact version of the overlay (makes ui better I think)
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         val wasScreenOff = !powerManager.isInteractive
 
         Timber.tag(TAG).d("AlarmReceiver: onReceive triggered with action: ${intent.action}")
 
+        // If we are in snooze alarm, then we cannot reschedule for next week's occurrence of this alarm,
+        // we reschedule only on main alarm
         val isSnooze = intent.getBooleanExtra("IS_SNOOZE", false)
         if (!isSnooze) {
             alarmScheduler.cancelAlarmOccurrenceByIntentAction(intent.action.toString())
@@ -66,9 +71,11 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             alarmScheduler.rescheduleOccurrenceForNextWeek(alarmState)
         }
 
-
-
+        // launch alarm activity and handle notification
         startAlarmActivity(context, intent, wasScreenOff, isSnooze)
+
+        // if we allow for notifications, also show the notification
+        // however notification showing is not vital, as the overlay screen doesn't depend on notification existence
         handleNotification(context, intent)
     }
 
