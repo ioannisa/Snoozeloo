@@ -2,11 +2,12 @@ package eu.anifantakis.snoozeloo.core.data.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import eu.anifantakis.snoozeloo.alarm.domain.datasource.AlarmId
 
 @Entity
 data class AlarmEntity(
     @PrimaryKey(autoGenerate = false)
-    val id: String,
+    val id: AlarmId,
     val hour: Int = 0,
     val minute: Int = 0,
     val enabled: Boolean = true,

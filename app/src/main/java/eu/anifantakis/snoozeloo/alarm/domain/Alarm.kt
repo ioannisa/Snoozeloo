@@ -2,13 +2,14 @@ package eu.anifantakis.snoozeloo.alarm.domain
 
 import android.os.Parcelable
 import eu.anifantakis.navhelper.serialization.StringSanitizer
+import eu.anifantakis.snoozeloo.alarm.domain.datasource.AlarmId
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 @Serializable
 @Parcelize
 data class Alarm(
-    val id: String,
+    val id: AlarmId,
     val hour: Int,
     val minute: Int,
     val title: String,

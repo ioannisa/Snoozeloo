@@ -12,6 +12,7 @@ import android.provider.Settings
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import eu.anifantakis.snoozeloo.alarm.domain.datasource.AlarmId
 import eu.anifantakis.snoozeloo.core.domain.AlarmScheduler
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -38,7 +39,7 @@ data class AlarmOccurrenceState(
     val volume: Float = 0.5f,
     val shouldVibrate: Boolean = true,
     val ringtoneUri: String? = null,
-    val alarmId: String? = null,
+    val alarmId: AlarmId? = null,
     val dayOfWeek: Int? = null,
     val hour: Int = 0,
     val minute: Int = 0
@@ -113,7 +114,7 @@ class AlarmDismissActivityViewModel(
         volume: Float,
         shouldVibrate: Boolean,
         ringtoneUri: String?,
-        alarmId: String?,
+        alarmId: AlarmId?,
         dayOfWeek: Int,
         hour: Int,
         minute: Int
