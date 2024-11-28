@@ -409,7 +409,7 @@ private fun ShowAlertDialog(
                     onDismiss()
                 }
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
