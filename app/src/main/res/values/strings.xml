@@ -49,6 +49,13 @@
     <string name="snoozed">(Snoozed)</string>
     <string name="dismiss_button_text">Dismiss</string>
     <string name="snooze_button_text">Snooze</string>
-    <string name="cancel">Cancel</string>">
+    <string name="cancel">Cancel</string>
+    <string name="chip_monday">Mo</string>
+    <string name="chip_tuesday">Tu</string>
+    <string name="chip_wednesday">We</string>
+    <string name="chip_thursday">Th</string>
+    <string name="chip_friday">Fr</string>
+    <string name="chip_saturday">Sa</string>
+    <string name="chip_sunday">Su</string>">
 
 </resources>

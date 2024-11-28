@@ -19,9 +19,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import eu.anifantakis.snoozeloo.R
 import eu.anifantakis.snoozeloo.alarm.domain.DaysOfWeek
 import eu.anifantakis.snoozeloo.ui.theme.SnoozelooTheme
 
@@ -111,17 +113,15 @@ fun AppWeeklyChips(
     onSelectionChanged: (DaysOfWeek) -> Unit,
 ) {
     // Define the days
-    val days = remember {
-        listOf(
-            DayChip("mo", "Mo"),
-            DayChip("tu", "Tu"),
-            DayChip("we", "We"),
-            DayChip("th", "Th"),
-            DayChip("fr", "Fr"),
-            DayChip("sa", "Sa"),
-            DayChip("su", "Su")
-        )
-    }
+    val days = listOf(
+        DayChip("mo", stringResource(R.string.chip_monday)),
+        DayChip("tu", stringResource(R.string.chip_tuesday)),
+        DayChip("we", stringResource(R.string.chip_wednesday)),
+        DayChip("th", stringResource(R.string.chip_thursday)),
+        DayChip("fr", stringResource(R.string.chip_friday)),
+        DayChip("sa", stringResource(R.string.chip_saturday)),
+        DayChip("su", stringResource(R.string.chip_sunday))
+    )
 
     // Initialize selectedDays based on DaysOfWeek
     var selectedDaySet by remember(selectedDays) {
