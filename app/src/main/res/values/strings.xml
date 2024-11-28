@@ -56,6 +56,14 @@
     <string name="chip_thursday">Th</string>
     <string name="chip_friday">Fr</string>
     <string name="chip_saturday">Sa</string>
-    <string name="chip_sunday">Su</string>">
+    <string name="chip_sunday">Su</string>
+
+    <string name="chip_monday_id" translatable="false">mo</string>
+    <string name="chip_tuesday_id" translatable="false">tu</string>
+    <string name="chip_wednesday_id" translatable="false">we</string>
+    <string name="chip_thursday_id" translatable="false">th</string>
+    <string name="chip_friday_id" translatable="false">fr</string>
+    <string name="chip_saturday_id" translatable="false">sa</string>
+    <string name="chip_sunday_id" translatable="false">su</string>">
 
 </resources>

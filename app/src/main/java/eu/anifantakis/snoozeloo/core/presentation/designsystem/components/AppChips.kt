@@ -112,27 +112,43 @@ fun AppWeeklyChips(
     onError: () -> Unit = {},
     onSelectionChanged: (DaysOfWeek) -> Unit,
 ) {
+    val chipMonday = stringResource(R.string.chip_monday)
+    val chipTuesday = stringResource(R.string.chip_tuesday)
+    val chipWednesday = stringResource(R.string.chip_wednesday)
+    val chipThursday = stringResource(R.string.chip_thursday)
+    val chipFriday = stringResource(R.string.chip_friday)
+    val chipSaturday = stringResource(R.string.chip_saturday)
+    val chipSunday = stringResource(R.string.chip_sunday)
+
+    val chipMondayId = stringResource(R.string.chip_monday_id)
+    val chipTuesdayId = stringResource(R.string.chip_tuesday_id)
+    val chipWednesdayId = stringResource(R.string.chip_wednesday_id)
+    val chipThursdayId = stringResource(R.string.chip_thursday_id)
+    val chipFridayId = stringResource(R.string.chip_friday_id)
+    val chipSaturdayId = stringResource(R.string.chip_saturday_id)
+    val chipSundayId = stringResource(R.string.chip_sunday_id)
+
     // Define the days
     val days = listOf(
-        DayChip("mo", stringResource(R.string.chip_monday)),
-        DayChip("tu", stringResource(R.string.chip_tuesday)),
-        DayChip("we", stringResource(R.string.chip_wednesday)),
-        DayChip("th", stringResource(R.string.chip_thursday)),
-        DayChip("fr", stringResource(R.string.chip_friday)),
-        DayChip("sa", stringResource(R.string.chip_saturday)),
-        DayChip("su", stringResource(R.string.chip_sunday))
+        DayChip(chipMondayId, chipMonday),
+        DayChip(chipTuesdayId, chipTuesday),
+        DayChip(chipWednesdayId, chipWednesday),
+        DayChip(chipThursdayId, chipThursday),
+        DayChip(chipFridayId, chipFriday),
+        DayChip(chipSaturdayId, chipSaturday),
+        DayChip(chipSundayId, chipSunday)
     )
 
     // Initialize selectedDays based on DaysOfWeek
     var selectedDaySet by remember(selectedDays) {
         mutableStateOf(buildSet {
-            if (selectedDays.mo) add("mo")
-            if (selectedDays.tu) add("tu")
-            if (selectedDays.we) add("we")
-            if (selectedDays.th) add("th")
-            if (selectedDays.fr) add("fr")
-            if (selectedDays.sa) add("sa")
-            if (selectedDays.su) add("su")
+            if (selectedDays.mo) add(chipMondayId)
+            if (selectedDays.tu) add(chipTuesdayId)
+            if (selectedDays.we) add(chipWednesdayId)
+            if (selectedDays.th) add(chipThursdayId)
+            if (selectedDays.fr) add(chipFridayId)
+            if (selectedDays.sa) add(chipSaturdayId)
+            if (selectedDays.su) add(chipSundayId)
         })
     }
 
@@ -143,13 +159,13 @@ fun AppWeeklyChips(
             selectedDaySet = newSelection
 
             val daysOfWeek = DaysOfWeek(
-                mo = newSelection.contains("mo"),
-                tu = newSelection.contains("tu"),
-                we = newSelection.contains("we"),
-                th = newSelection.contains("th"),
-                fr = newSelection.contains("fr"),
-                sa = newSelection.contains("sa"),
-                su = newSelection.contains("su")
+                mo = newSelection.contains(chipMondayId),
+                tu = newSelection.contains(chipTuesdayId),
+                we = newSelection.contains(chipWednesdayId),
+                th = newSelection.contains(chipThursdayId),
+                fr = newSelection.contains(chipFridayId),
+                sa = newSelection.contains(chipSaturdayId),
+                su = newSelection.contains(chipSundayId)
             )
 
             onSelectionChanged(daysOfWeek)
