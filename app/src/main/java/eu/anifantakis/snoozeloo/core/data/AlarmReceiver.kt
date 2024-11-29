@@ -170,7 +170,6 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
      */
     private fun showAlarmNotification(context: Context, intent: Intent) {
         try {
-            val fullScreenPendingIntent = createFullScreenPendingIntent(context, intent)
             val dismissPendingIntent = createActionPendingIntent(context, intent, "DISMISS_ALARM", 1)
             val snoozePendingIntent = createActionPendingIntent(context, intent, "SNOOZE_ALARM", 2)
 
@@ -183,8 +182,8 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setFullScreenIntent(fullScreenPendingIntent, true)
-                .setAutoCancel(true)
+                .setAutoCancel(false)
+                .setOngoing(true)
                 .setOngoing(true)
                 .addAction(android.R.drawable.ic_menu_close_clear_cancel,
                     context.getString(R.string.dismiss_button_text), dismissPendingIntent)
@@ -199,23 +198,6 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to show alarm notification")
         }
-    }
-
-    /**
-     * Creates a PendingIntent for the full-screen alarm activity.
-     */
-    private fun createFullScreenPendingIntent(context: Context, intent: Intent): PendingIntent {
-        val fullScreenIntent = Intent(context, AlarmDismissActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtras(intent)
-        }
-
-        return PendingIntent.getActivity(
-            context,
-            System.currentTimeMillis().toInt(),
-            fullScreenIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
     }
 
     /**
