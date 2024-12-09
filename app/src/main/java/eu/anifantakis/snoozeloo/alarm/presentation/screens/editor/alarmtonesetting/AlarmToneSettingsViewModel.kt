@@ -86,7 +86,7 @@ class AlarmToneSettingViewModel(
         private set
 
     // Channel for one-time events
-    private val eventChannel = Channel<AlarmToneEvent>()
+    private val eventChannel = Channel<AlarmToneEvent>(Channel.BUFFERED)
     val events = eventChannel.receiveAsFlow()
 
     /**

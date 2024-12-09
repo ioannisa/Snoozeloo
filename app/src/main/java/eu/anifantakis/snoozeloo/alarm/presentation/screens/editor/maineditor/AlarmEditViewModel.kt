@@ -125,7 +125,7 @@ class AlarmEditViewModel(
         .toComposeState(viewModelScope)
 
     // Event channel for one-time UI events
-    private val eventChannel = Channel<AlarmEditorScreenEvent>()
+    private val eventChannel = Channel<AlarmEditorScreenEvent>(Channel.BUFFERED)
     val events = eventChannel.receiveAsFlow()
 
     init {

@@ -80,7 +80,7 @@ class AlarmsViewModel(
     private var use24HourFormat by persistManager.dataStorePrefs.preference(false, encrypted = true)
 
     // Channel for one-time UI events
-    private val eventChannel = Channel<AlarmsScreenEvent>()
+    private val eventChannel = Channel<AlarmsScreenEvent>(Channel.BUFFERED)
     val events = eventChannel.receiveAsFlow()
 
     init {
